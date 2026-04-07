@@ -1,0 +1,16 @@
+extends ../layout
+
+block content
+    .card
+        h2 Logowanie
+
+        form(action="/login" method="POST")
+            .form-group
+                label(for="username") Login
+                input#username(type="text" name="username" required)
+
+            .form-group
+                label(for="password") Hasło
+                input#password(type="password" name="password" required)
+
+            button(type="submit") Zaloguj

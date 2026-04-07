@@ -1,0 +1,9 @@
+if success && success.length
+    .flash.flash-success
+        each msg in success
+            p= msg
+
+if error && error.length
+    .flash.flash-error
+        each msg in error
+            p= msg

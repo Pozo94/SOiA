@@ -1,0 +1,154 @@
+extends ../layout
+
+block content
+    .card
+        h2 Szczegóły adresu
+
+        .details-grid
+            .detail-item
+                span.detail-label Ulica
+                span.detail-value= address.street
+
+            .detail-item
+                span.detail-label Nr
+                span.detail-value= address.buildingNumber || '-'
+
+            .detail-item
+                span.detail-label Kod
+                span.detail-value= address.postalCode || '-'
+
+            .detail-item
+                span.detail-label Miasto
+                span.detail-value= address.city
+
+            .detail-item
+                span.detail-label Status
+                span.detail-value
+                    span(class=`badge badge-${address.status}`)= address.status
+
+            .detail-item
+                span.detail-label Przypisany
+                span.detail-value= address.assignedTo ? address.assignedTo.firstname+ " "+address.assignedTo.lastname  : 'brak'
+
+        if !address.assignedTo
+            .actions
+                form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
+                    button(type="submit") Przypisz do mnie
+        else if canUnassign
+            .actions
+                form.inline-form(action=`/addresses/${address._id}/unassign` method="POST" onsubmit="return confirm('Na pewno cofnąć przypisanie?')")
+                    button.button-danger(type="submit") Cofnij przypisanie
+
+    .card(style="margin-top: 20px;")
+        h3 Suplement
+
+        if hasSupplement
+            .details-grid
+                .detail-item
+                    span.detail-label ID obiektu:
+                    span.detail-value= address.supplement.objectNumber
+
+                .detail-item
+                    span.detail-label Data wizji lokalnej:
+                    span.detail-value= address.supplement.visionDate ? new Date(address.supplement.visionDate).toLocaleDateString('pl-PL') : '-'
+
+                .detail-item
+                    span.detail-label Współrzędne:
+                    span.detail-value #{address.supplement.latitude}, #{address.supplement.longitude}
+
+                .detail-item
+                    span.detail-label Typ planowanej syreny:
+                    span.detail-value= address.supplement.sirenType
+
+                .detail-item
+                    span.detail-label Miejsce montażu syreny:
+                    span.detail-value= address.supplement.sirenLocation
+
+                .detail-item
+                    span.detail-label Sposób posadowienia syreny:
+                    span.detail-value= address.supplement.sirenMounting
+
+                if address.supplement.powerSupply !== null && address.supplement.powerSupply !== undefined && address.supplement.powerSupply !== ''
+                    .detail-item
+                        span.detail-label Odległość syreny od punktu zasilania:
+                        span.detail-value= address.supplement.powerSupply
+
+                .detail-item
+                    span.detail-label Zasilanie w tym samym pomieszczeniu co sterownik:
+                    span.detail-value= address.supplement.powerBool ? 'TAK' : 'NIE'
+
+                if !address.supplement.powerBool && address.supplement.powerLocation
+                    .detail-item
+                        span.detail-label Lokalizacja punktu przyłączenia zasilania:
+                        span.detail-value= address.supplement.powerLocation
+
+                .detail-item
+                    span.detail-label Budynek posiada instalację odgromową:
+                    span.detail-value= address.supplement.lightningProtection ? 'TAK' : 'NIE'
+
+                if !address.supplement.lightningProtection
+                    if address.supplement.buildingHeight !== null && address.supplement.buildingHeight !== undefined && address.supplement.buildingHeight !== ''
+                        .detail-item
+                            span.detail-label Wysokość budynku:
+                            span.detail-value= address.supplement.buildingHeight
+
+                    if address.supplement.lightningProtectionLength !== null && address.supplement.lightningProtectionLength !== undefined && address.supplement.lightningProtectionLength !== ''
+                        .detail-item
+                            span.detail-label Szacunkowa długość instalacji odgromowej do wykonania:
+                            span.detail-value= address.supplement.lightningProtectionLength
+
+                if address.supplement.groundType
+                    .detail-item
+                        span.detail-label Rodzaj podłoża wokół budynku:
+                        span.detail-value= address.supplement.groundType
+
+                if address.supplement.passageMethod
+                    .detail-item
+                        span.detail-label Sposób wykonania przejścia kablowego:
+                        span.detail-value= address.supplement.passageMethod
+
+                if address.supplement.roofCovering
+                    .detail-item
+                        span.detail-label Rodzaj poszycia dachu:
+                        span.detail-value= address.supplement.roofCovering
+
+                .detail-item
+                    span.detail-label Planowane jest podłączenie kabla LAN:
+                    span.detail-value= address.supplement.lan ? 'TAK' : 'NIE'
+
+                if address.supplement.lan
+                    if address.supplement.lanLength !== null && address.supplement.lanLength !== undefined && address.supplement.lanLength !== ''
+                        .detail-item
+                            span.detail-label Odległość od gniazda sieciowego lub serwerowni:
+                            span.detail-value= address.supplement.lanLength
+
+                    if address.supplement.lanWalls !== null && address.supplement.lanWalls !== undefined && address.supplement.lanWalls !== ''
+                        .detail-item
+                            span.detail-label Ilość przebić przez ściany koniecznych do wykonania:
+                            span.detail-value= address.supplement.lanWalls
+
+                    if address.supplement.lanRoute
+                        .detail-item
+                            span.detail-label Planowana trasa kabli:
+                            span.detail-value= address.supplement.lanRoute
+
+                if address.supplement.updatedBy
+                    .detail-item
+                        span.detail-label Ostatnia edycja:
+                        span.detail-value #{address.supplement.updatedBy.firstname} #{address.supplement.updatedBy.lastname} / #{new Date(address.supplement.updatedAt).toLocaleString('pl-PL')}
+
+            if canEditSupplement
+                .actions
+                    a.button(href=`/addresses/${address._id}/supplement`) Edytuj suplement
+                    a.button.button-secondary(href=`/addresses/${address._id}/supplement/docx`) Pobierz DOCX
+                    form.inline-form(action=`/addresses/${address._id}/supplement/delete` method="POST" onsubmit="return confirm('Na pewno usunąć suplement?')")
+                        button.button-danger(type="submit") Usuń suplement
+        else
+            p Brak danych suplementu.
+            if canEditSupplement
+                .actions
+                    a.button(href=`/addresses/${address._id}/supplement`) Dodaj suplement
+
+    .card(style="margin-top: 20px;")
+        .actions
+            a.button.button-secondary(href="/addresses") Powrót do listy

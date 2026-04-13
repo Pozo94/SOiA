@@ -14,6 +14,13 @@ export const GROUND_TYPE = [
     "inny typ podłoża",
     ""
 ];
+export const SIREN_TYPE = [
+    "600",
+    "900",
+    "1200",
+    "inna",
+    ""
+];
 export const PASSAGE_METHOD = [
     "wykorzystanie istniejącego przepustu dachowego",
     "wykonanie nowego przepustu",
@@ -27,4 +34,18 @@ export const ROOF_COVERING = [
     "blacha",
     "inny typ pokrycia",
     ""
+];
+export const CONNECTION_TYPE = [
+    "rozdzielnia główna",
+    "pomieszczenie techniczne",
+    "serwerownia",
+    "puszka ścienna",
+    "gniazdo",
+    "kabel wpięty na sztywno",
+    ""
+];
+export const GSM_MOUNTING = [
+  "na syrenie",
+  "za oknem",
+  ""
 ];

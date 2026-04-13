@@ -1,36 +1,68 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const {
-    SIREN_MOUNTING,
-    GROUND_TYPE,
-    PASSAGE_METHOD,
-    ROOF_COVERING
-} = require('../constants/enums.js');
+
 const Address = require('../models/Address');
 const { isLoggedIn, canEditAssignedAddress } = require('../middleware/auth');
+const {
+    ROOF_COVERING,
+    PASSAGE_METHOD,
+    SIREN_MOUNTING,
+    GROUND_TYPE,
+    CONNECTION_TYPE,
+    GSM_MOUNTING
+} = require('../constants/enums.js');
 const { generateSupplementDocx } = require('../services/docxService');
 
 const router = express.Router();
+const multer = require('multer');
 
+const uploadPhotos= multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10 MB na plik
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype && file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Dozwolone są tylko pliki graficzne.'));
+        }
+    }
+});
 function hasSupplementData(supplement) {
     if (!supplement) return false;
 
     return Boolean(
         supplement.objectNumber ||
         supplement.visionDate ||
-        supplement.latitude ||
-        supplement.longitude ||
+        supplement.lift ||
         supplement.sirenLocation ||
+        supplement.speakerLocation ||
+        supplement.speakerHeight !== null ||
+        supplement.antennaGSM ||
+        supplement.antennaCable !== null ||
         supplement.sirenMounting ||
-        supplement.powerSupply ||
         supplement.powerLocation ||
-        supplement.buildingHeight ||
+        supplement.powerBool ||
+        supplement.fuseBoxLocation ||
+        supplement.powerLocationDistance !== null ||
+        supplement.sirenDistance !== null ||
+        supplement.sirenWalls !== null ||
+        supplement.lightningProtection ||
+        supplement.lightningProtectionDistance !== null ||
+        supplement.buildingHeight !== null ||
+        supplement.lightningProtectionLength !== null ||
         supplement.groundType ||
         supplement.passageMethod ||
         supplement.roofCovering ||
-        supplement.lanLength ||
-        supplement.lanWalls ||
-        supplement.lanRoute
+        supplement.lan ||
+        supplement.lanLength !== null ||
+        supplement.lanWalls !== null ||
+        supplement.lanRoute ||
+        supplement.comments ||
+        supplement.contact?.firstname ||
+        supplement.contact?.lastname ||
+        supplement.contact?.phone
     );
 }
 
@@ -38,49 +70,80 @@ const supplementValidators = [
     body('objectNumber')
         .trim()
         .notEmpty()
-        .withMessage('Numer obiektu jest wymagany.'),
+        .withMessage('ID obiektu jest wymagane.'),
 
     body('visionDate')
         .notEmpty()
-        .withMessage('Data wizji jest wymagana.')
+        .withMessage('Data wizji lokalnej jest wymagana.')
         .isISO8601()
-        .withMessage('Nieprawidłowa data wizji.'),
-
-    body('latitude')
-        .trim()
-        .notEmpty()
-        .withMessage('Szerokość geograficzna jest wymagana.'),
-
-    body('longitude')
-        .trim()
-        .notEmpty()
-        .withMessage('Długość geograficzna jest wymagana.'),
-
-    body('sirenType')
-        .trim()
-        .notEmpty()
-        .withMessage('Typ syreny jest wymagany.'),
+        .withMessage('Nieprawidłowa data wizji lokalnej.'),
 
     body('sirenLocation')
         .trim()
         .notEmpty()
-        .withMessage('Lokalizacja syreny jest wymagana.'),
+        .withMessage('Miejsce montażu syreny jest wymagane.'),
+
+    body('speakerLocation')
+        .trim()
+        .notEmpty()
+        .withMessage('Miejsce montażu głośnika jest wymagane.'),
+
+    body('speakerHeight')
+        .optional({ values: 'falsy' })
+        .isFloat({ min: 0 })
+        .withMessage('Wysokość montażu głośnika musi być liczbą.'),
+
+    body('antennaGSM')
+        .trim()
+        .isIn(GSM_MOUNTING)
+        .withMessage('Wybierz poprawny sposób montażu anteny GSM.'),
+
+    body('antennaCable')
+        .optional({ values: 'falsy' })
+        .isFloat({ min: 0 })
+        .withMessage('Długość kabla antenowego musi być liczbą.'),
 
     body('sirenMounting')
         .trim()
         .isIn(SIREN_MOUNTING)
-        .withMessage('Wybierz poprawny sposób montażu.'),
-
-    body('powerSupply')
-        .optional({ values: 'falsy' })
-        .isFloat({ min: 0 })
-        .withMessage('Zasilanie musi być liczbą.'),
+        .withMessage('Wybierz poprawny sposób posadowienia syreny.'),
 
     body('powerLocation')
-        .if((value, { req }) => req.body.powerBool !== 'on')
         .trim()
+        .isIn(CONNECTION_TYPE)
+        .withMessage('Wybierz poprawny typ przyłącza zasilania.'),
+
+
+
+    body('fuseBoxLocation')
+        .optional({ values: 'falsy' })
+        .trim(),
+
+    body('powerLocationDistance')
+        .optional({ values: 'falsy' })
+        .isFloat({ min: 0 })
+        .withMessage('Odległość do punktu przyłączenia musi być liczbą.'),
+
+    body('sirenDistance')
+        .if((value, { req }) => req.body.powerBool === 'on')
         .notEmpty()
-        .withMessage('Podaj lokalizację punktu przyłączenia zasilania.'),
+        .withMessage('Podaj odległość do syreny.')
+        .bail()
+        .isFloat({ min: 0 })
+        .withMessage('Odległość do syreny musi być liczbą.'),
+
+    body('sirenWalls')
+        .optional({ values: 'falsy' })
+        .isInt({ min: 0 })
+        .withMessage('Ilość ścian dla syreny musi być liczbą całkowitą.'),
+
+    body('lightningProtectionDistance')
+        .if((value, { req }) => req.body.lightningProtection === 'on')
+        .notEmpty()
+        .withMessage('Podaj odległość do istniejącej instalacji odgromowej.')
+        .bail()
+        .isFloat({ min: 0 })
+        .withMessage('Odległość do instalacji odgromowej musi być liczbą.'),
 
     body('buildingHeight')
         .if((value, { req }) => req.body.lightningProtection !== 'on')
@@ -93,25 +156,25 @@ const supplementValidators = [
     body('lightningProtectionLength')
         .if((value, { req }) => req.body.lightningProtection !== 'on')
         .notEmpty()
-        .withMessage('Podaj długość instalacji odgromowej do wykonania.')
+        .withMessage('Podaj szacunkową długość instalacji odgromowej do wykonania.')
         .bail()
         .isFloat({ min: 0 })
-        .withMessage('Długość odgromu musi być liczbą.'),
+        .withMessage('Długość instalacji odgromowej musi być liczbą.'),
 
     body('groundType')
         .trim()
         .isIn(GROUND_TYPE)
-        .withMessage('Wybierz poprawny rodzaj gruntu.'),
+        .withMessage('Wybierz poprawny rodzaj podłoża.'),
 
     body('passageMethod')
         .trim()
         .isIn(PASSAGE_METHOD)
-        .withMessage('Wybierz poprawny sposób przejścia.'),
+        .withMessage('Wybierz poprawny sposób wykonania przejścia kablowego.'),
 
     body('roofCovering')
         .trim()
         .isIn(ROOF_COVERING)
-        .withMessage('Wybierz poprawny typ pokrycia dachu.'),
+        .withMessage('Wybierz poprawny rodzaj poszycia dachu.'),
 
     body('lanLength')
         .if((value, { req }) => req.body.lan === 'on')
@@ -124,16 +187,30 @@ const supplementValidators = [
     body('lanWalls')
         .if((value, { req }) => req.body.lan === 'on')
         .notEmpty()
-        .withMessage('Podaj ilość przebić przez ściany.')
+        .withMessage('Podaj ilość przebić przez ściany dla LAN.')
         .bail()
         .isInt({ min: 0 })
-        .withMessage('Ilość ścian LAN musi być liczbą całkowitą.'),
+        .withMessage('Ilość ścian dla LAN musi być liczbą całkowitą.'),
 
     body('lanRoute')
-        .if((value, { req }) => req.body.lan === 'on')
+        .optional({ values: 'falsy' })
+        .trim(),
+
+    body('comments')
+        .optional({ values: 'falsy' })
+        .trim(),
+
+    body('contact.firstname')
+        .optional({ values: 'falsy' })
+        .trim(),
+
+    body('contact.lastname')
+        .optional({ values: 'falsy' })
+        .trim(),
+
+    body('contact.phone')
+        .optional({ values: 'falsy' })
         .trim()
-        .notEmpty()
-        .withMessage('Podaj planowaną trasę kabli LAN.')
 ];
 
 router.get('/', isLoggedIn, async (req, res) => {
@@ -149,10 +226,10 @@ router.get('/', isLoggedIn, async (req, res) => {
 
         if (q.trim()) {
             filter.$or = [
-                { street: { $regex: q.trim(), $options: 'i' } },
-                { city: { $regex: q.trim(), $options: 'i' } },
-                { postalCode: { $regex: q.trim(), $options: 'i' } },
-                { buildingNumber: { $regex: q.trim(), $options: 'i' } }
+                { shortName: { $regex: q.trim(), $options: 'i' } },
+                { title: { $regex: q.trim(), $options: 'i' } },
+                { address: { $regex: q.trim(), $options: 'i' } },
+                { city: { $regex: q.trim(), $options: 'i' } }
             ];
         }
 
@@ -171,11 +248,17 @@ router.get('/', isLoggedIn, async (req, res) => {
         let sortOption = { createdAt: -1 };
 
         switch (sort) {
-            case 'street_asc':
-                sortOption = { street: 1 };
+            case 'shortName_asc':
+                sortOption = { shortName: 1 };
                 break;
-            case 'street_desc':
-                sortOption = { street: -1 };
+            case 'shortName_desc':
+                sortOption = { shortName: -1 };
+                break;
+            case 'title_asc':
+                sortOption = { title: 1 };
+                break;
+            case 'title_desc':
+                sortOption = { title: -1 };
                 break;
             case 'city_asc':
                 sortOption = { city: 1 };
@@ -247,6 +330,7 @@ router.post('/:id/assign', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+
 router.post('/:id/unassign', isLoggedIn, async (req, res) => {
     try {
         const address = await Address.findById(req.params.id);
@@ -279,213 +363,358 @@ router.post('/:id/unassign', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+
 router.get('/:id/supplement', isLoggedIn, async (req, res) => {
-    const address = await Address.findById(req.params.id).populate('assignedTo');
+    try {
+        const address = await Address.findById(req.params.id).populate('assignedTo');
 
-    if (!address) {
-        req.flash('error', 'Nie znaleziono adresu');
-        return res.redirect('/addresses');
-    }
-
-    if (!canEditAssignedAddress(address, req.session.user)) {
-        req.flash('error', 'Nie masz uprawnień do edycji suplementu dla tego adresu.');
-        return res.redirect(`/addresses/${req.params.id}`);
-    }
-
-
-    res.render('addresses/supplement-form', {
-        title: 'Suplement',
-        address,
-        errors: [],
-        sirenMountingOptions: SIREN_MOUNTING,
-        groundTypeOptions: GROUND_TYPE,
-        passageMethodOptions: PASSAGE_METHOD,
-        roofCoveringOptions: ROOF_COVERING,
-        formData: {
-            objectNumber: address.supplement?.objectNumber || '',
-            visionDate: address.supplement?.visionDate
-                ? new Date(address.supplement.visionDate).toISOString().split('T')[0]
-                : '',
-            latitude: address.supplement?.latitude || '',
-            longitude: address.supplement?.longitude || '',
-            sirenType: address.supplement?.sirenType || 'Gibon 600',
-            sirenLocation: address.supplement?.sirenLocation || '',
-            sirenMounting: address.supplement?.sirenMounting || '',
-            powerSupply: address.supplement?.powerSupply ?? '',
-            powerBool: address.supplement?.powerBool || false,
-            powerLocation: address.supplement?.powerLocation || '',
-            lightningProtection: address.supplement?.lightningProtection || false,
-            buildingHeight: address.supplement?.buildingHeight ?? '',
-            lightningProtectionLength: address.supplement?.lightningProtectionLength ?? '',
-            groundType: address.supplement?.groundType || '',
-            passageMethod: address.supplement?.passageMethod || '',
-            roofCovering: address.supplement?.roofCovering || '',
-            lan: address.supplement?.lan || false,
-            lanLength: address.supplement?.lanLength ?? '',
-            lanWalls: address.supplement?.lanWalls ?? '',
-            lanRoute: address.supplement?.lanRoute || ''
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
         }
-    });
-});
 
-router.post('/:id/supplement', isLoggedIn, supplementValidators, async (req, res) => {
-    const address = await Address.findById(req.params.id).populate('assignedTo');
+        if (!canEditAssignedAddress(address, req.session.user)) {
+            req.flash('error', 'Nie masz uprawnień do edycji suplementu dla tego adresu.');
+            return res.redirect(`/addresses/${req.params.id}`);
+        }
 
-    if (!address) {
-        req.flash('error', 'Nie znaleziono adresu');
-        return res.redirect('/addresses');
-    }
-    if (!canEditAssignedAddress(address, req.session.user)) {
-        req.flash('error', 'Nie masz uprawnień do zapisu suplementu dla tego adresu.');
-        return res.redirect(`/addresses/${req.params.id}`);
-    }
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-        return res.status(422).render('addresses/supplement-form', {
+        res.render('addresses/supplement-form', {
             title: 'Suplement',
             address,
-            errors: errors.array(),
+            errors: [],
+            sirenMountingOptions: SIREN_MOUNTING,
+            groundTypeOptions: GROUND_TYPE,
+            passageMethodOptions: PASSAGE_METHOD,
+            roofCoveringOptions: ROOF_COVERING,
+            connectionTypeOptions: CONNECTION_TYPE,
+            gsmMountingOptions: GSM_MOUNTING,
             formData: {
-                objectNumber: req.body.objectNumber || '',
-                visionDate: req.body.visionDate || '',
-                latitude: req.body.latitude || '',
-                longitude: req.body.longitude || '',
-                sirenType: req.body.sirenType || 'Gibon 600',
+                objectNumber: address.supplement?.objectNumber || '',
+                visionDate: address.supplement?.visionDate
+                    ? new Date(address.supplement.visionDate).toISOString().split('T')[0]
+                    : '',
+                lift: address.supplement?.lift || false,
+                sirenLocation: address.supplement?.sirenLocation || '',
+                speakerLocation: address.supplement?.speakerLocation || '',
+                speakerHeight: address.supplement?.speakerHeight ?? '',
+                antennaGSM: address.supplement?.antennaGSM || '',
+                antennaCable: address.supplement?.antennaCable ?? '',
+                sirenMounting: address.supplement?.sirenMounting || '',
+                powerLocation: address.supplement?.powerLocation || '',
+                powerBool: address.supplement?.powerBool || false,
+                fuseBoxLocation: address.supplement?.fuseBoxLocation || '',
+                powerLocationDistance: address.supplement?.powerLocationDistance ?? '',
+                sirenDistance: address.supplement?.sirenDistance ?? '',
+                sirenWalls: address.supplement?.sirenWalls ?? '',
+                lightningProtection: address.supplement?.lightningProtection || false,
+                lightningProtectionDistance: address.supplement?.lightningProtectionDistance ?? '',
+                buildingHeight: address.supplement?.buildingHeight ?? '',
+                lightningProtectionLength: address.supplement?.lightningProtectionLength ?? '',
+                groundType: address.supplement?.groundType || '',
+                passageMethod: address.supplement?.passageMethod || '',
+                roofCovering: address.supplement?.roofCovering || '',
+                lan: address.supplement?.lan || false,
+                lanLength: address.supplement?.lanLength ?? '',
+                lanWalls: address.supplement?.lanWalls ?? '',
+                lanRoute: address.supplement?.lanRoute || '',
+                comments: address.supplement?.comments || '',
+                contact: {
+                    firstname: address.supplement?.contact?.firstname || '',
+                    lastname: address.supplement?.contact?.lastname || '',
+                    phone: address.supplement?.contact?.phone || ''
+                }
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się otworzyć formularza suplementu.');
+        res.redirect('/addresses');
+    }
+});
+
+router.post(
+    '/:id/supplement',
+    isLoggedIn,
+    uploadPhotos.fields([
+        { name: 'photo1', maxCount: 1 },
+        { name: 'photo2', maxCount: 1 },
+        { name: 'photo3', maxCount: 1 },
+        { name: 'photo4', maxCount: 1 },
+        { name: 'photo5', maxCount: 1 },
+        { name: 'photo6', maxCount: 1 },
+        { name: 'photo7', maxCount: 1 },
+        { name: 'photo8', maxCount: 1 }
+    ]),
+    supplementValidators,
+    async (req, res) => {
+        console.log('FILES:', req.files); // 👈 TU
+
+        try {
+            const address = await Address.findById(req.params.id).populate('assignedTo');
+
+            if (!address) {
+                req.flash('error', 'Nie znaleziono adresu');
+                return res.redirect('/addresses');
+            }
+
+            if (!canEditAssignedAddress(address, req.session.user)) {
+                req.flash('error', 'Nie masz uprawnień do zapisu suplementu dla tego adresu.');
+                return res.redirect(`/addresses/${req.params.id}`);
+            }
+
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(422).render('addresses/supplement-form', {
+                    title: 'Suplement',
+                    address,
+                    errors: errors.array(),
+
+                    sirenMountingOptions: SIREN_MOUNTING,
+                    groundTypeOptions: GROUND_TYPE,
+                    passageMethodOptions: PASSAGE_METHOD,
+                    roofCoveringOptions: ROOF_COVERING,
+                    connectionTypeOptions: CONNECTION_TYPE,
+                    gsmMountingOptions: GSM_MOUNTING,
+
+                    formData: {
+                        objectNumber: req.body.objectNumber || '',
+                        visionDate: req.body.visionDate || '',
+                        lift: req.body.lift === 'on',
+                        sirenLocation: req.body.sirenLocation || '',
+                        speakerLocation: req.body.speakerLocation || '',
+                        speakerHeight: req.body.speakerHeight || '',
+                        antennaGSM: req.body.antennaGSM || '',
+                        antennaCable: req.body.antennaCable || '',
+                        sirenMounting: req.body.sirenMounting || '',
+                        powerLocation: req.body.powerLocation || '',
+                        powerBool: req.body.powerBool === 'on',
+                        fuseBoxLocation: req.body.fuseBoxLocation || '',
+                        powerLocationDistance: req.body.powerLocationDistance || '',
+                        sirenDistance: req.body.sirenDistance || '',
+                        sirenWalls: req.body.sirenWalls || '',
+                        lightningProtection: req.body.lightningProtection === 'on',
+                        lightningProtectionDistance: req.body.lightningProtectionDistance || '',
+                        buildingHeight: req.body.buildingHeight || '',
+                        lightningProtectionLength: req.body.lightningProtectionLength || '',
+                        groundType: req.body.groundType || '',
+                        passageMethod: req.body.passageMethod || '',
+                        roofCovering: req.body.roofCovering || '',
+                        lan: req.body.lan === 'on',
+                        lanLength: req.body.lanLength || '',
+                        lanWalls: req.body.lanWalls || '',
+                        lanRoute: req.body.lanRoute || '',
+                        comments: req.body.comments || '',
+                        contact: {
+                            firstname: req.body.contact?.firstname || '',
+                            lastname: req.body.contact?.lastname || '',
+                            phone: req.body.contact?.phone || ''
+                        }
+                    }
+                });
+            }
+
+            const lift = req.body.lift === 'on';
+            const powerBool = req.body.powerBool === 'on';
+            const lightningProtection = req.body.lightningProtection === 'on';
+            const lan = req.body.lan === 'on';
+
+            const hasContact =
+                (req.body.contact?.firstname || '').trim() ||
+                (req.body.contact?.lastname || '').trim() ||
+                (req.body.contact?.phone || '').trim();
+
+            address.supplement = {
+                objectNumber: req.body.objectNumber,
+                visionDate: req.body.visionDate,
+                lift,
                 sirenLocation: req.body.sirenLocation || '',
+                speakerLocation: req.body.speakerLocation || '',
+                speakerHeight: req.body.speakerHeight || null,
+                antennaGSM: req.body.antennaGSM || '',
+                antennaCable: req.body.antennaCable || null,
                 sirenMounting: req.body.sirenMounting || '',
-                powerSupply: req.body.powerSupply || '',
-                powerBool: req.body.powerBool === 'on',
                 powerLocation: req.body.powerLocation || '',
-                lightningProtection: req.body.lightningProtection === 'on',
-                buildingHeight: req.body.buildingHeight || '',
-                lightningProtectionLength: req.body.lightningProtectionLength || '',
+                powerBool,
+                fuseBoxLocation: req.body.fuseBoxLocation || '',
+                powerLocationDistance: req.body.powerLocationDistance || null,
+                sirenDistance: powerBool ? (req.body.sirenDistance || null) : null,
+                sirenWalls: req.body.sirenWalls || null,
+                lightningProtection,
+                lightningProtectionDistance: lightningProtection ? (req.body.lightningProtectionDistance || null) : null,
+                buildingHeight: lightningProtection ? null : (req.body.buildingHeight || null),
+                lightningProtectionLength: lightningProtection ? null : (req.body.lightningProtectionLength || null),
                 groundType: req.body.groundType || '',
                 passageMethod: req.body.passageMethod || '',
                 roofCovering: req.body.roofCovering || '',
-                lan: req.body.lan === 'on',
-                lanLength: req.body.lanLength || '',
-                lanWalls: req.body.lanWalls || '',
-                lanRoute: req.body.lanRoute || ''
+                lan,
+                lanLength: lan ? (req.body.lanLength || null) : null,
+                lanWalls: lan ? (req.body.lanWalls || null) : null,
+                lanRoute: req.body.lanRoute || '',
+                comments: req.body.comments || '',
+                contact: hasContact
+                    ? {
+                        firstname: req.body.contact?.firstname || '',
+                        lastname: req.body.contact?.lastname || '',
+                        phone: req.body.contact?.phone || ''
+                    }
+                    : undefined,
+                wordpressUrl: address.supplement?.wordpressUrl || '',
+                updatedAt: new Date(),
+                updatedBy: req.session.user.id
+            };
+
+            await address.save();
+
+            const photos = {
+                photo1: req.files?.photo1?.[0]?.buffer || null,
+                photo2: req.files?.photo2?.[0]?.buffer || null,
+                photo3: req.files?.photo3?.[0]?.buffer || null,
+                photo4: req.files?.photo4?.[0]?.buffer || null,
+                photo5: req.files?.photo5?.[0]?.buffer || null,
+                photo6: req.files?.photo6?.[0]?.buffer || null,
+                photo7: req.files?.photo7?.[0]?.buffer || null,
+                photo8: req.files?.photo8?.[0]?.buffer || null
+            };
+
+            const buffer = generateSupplementDocx(address, photos);
+
+            function sanitizeFileName(value) {
+                return String(value)
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-zA-Z0-9._-]/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-|-$/g, '');
             }
-        });
+
+            const shortNamePart = sanitizeFileName(address.shortName || 'obiekt');
+            const safeFileName = `SOIA_2026_UMK_${shortNamePart}.docx`;
+
+            res.setHeader(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            );
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${safeFileName}"`
+            );
+
+            return res.send(buffer);
+        } catch (error) {
+            console.error(error);
+            req.flash('error', 'Nie udało się zapisać suplementu i wygenerować Worda.');
+            return res.redirect('/addresses');
+        }
     }
-    const powerBool = req.body.powerBool === 'on';
-    const lightningProtection = req.body.lightningProtection === 'on';
-    const lan = req.body.lan === 'on';
-    address.supplement = {
-        objectNumber: req.body.objectNumber,
-        visionDate: req.body.visionDate,
-        latitude: req.body.latitude,
-        longitude: req.body.longitude,
-        sirenType: req.body.sirenType,
-        sirenLocation: req.body.sirenLocation,
-        sirenMounting: req.body.sirenMounting,
-        powerSupply: req.body.powerSupply || null,
-        powerBool,
-        powerLocation: powerBool ? '' : (req.body.powerLocation || ''),
-        lightningProtection,
-        buildingHeight: lightningProtection ? null : (req.body.buildingHeight || null),
-        lightningProtectionLength: lightningProtection ? null : (req.body.lightningProtectionLength || null),
-        groundType: req.body.groundType,
-        passageMethod: req.body.passageMethod,
-        roofCovering: req.body.roofCovering,
-        lan,
-        lanLength: lan ? (req.body.lanLength || null) : null,
-        lanWalls: lan ? (req.body.lanWalls || null) : null,
-        lanRoute: lan ? (req.body.lanRoute || '') : '',
-        wordpressUrl: address.supplement?.wordpressUrl || '',
-        updatedAt: new Date(),
-        updatedBy: req.session.user.id
-    };
-
-
-
-    await address.save();
-
-    req.flash('success', 'Suplement został zapisany');
-    res.redirect(`/addresses/${address._id}`);
-});
+);
 
 router.post('/:id/supplement/delete', isLoggedIn, async (req, res) => {
-    const address = await Address.findById(req.params.id);
+    try {
+        const address = await Address.findById(req.params.id);
 
-    if (!address) {
-        req.flash('error', 'Nie znaleziono adresu');
-        return res.redirect('/addresses');
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        if (!canEditAssignedAddress(address, req.session.user)) {
+            req.flash('error', 'Nie masz uprawnień do usunięcia suplementu dla tego adresu.');
+            return res.redirect(`/addresses/${req.params.id}`);
+        }
+
+        address.supplement = undefined;
+
+        await address.save();
+
+        req.flash('success', 'Suplement został usunięty');
+        res.redirect(`/addresses/${address._id}`);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się usunąć suplementu');
+        res.redirect('/addresses');
     }
-    if (!canEditAssignedAddress(address, req.session.user)) {
-        req.flash('error', 'Nie masz uprawnień do usunięcia suplementu dla tego adresu.');
-        return res.redirect(`/addresses/${req.params.id}`);
-    }
-    address.supplement = undefined;
-
-    address.status = address.assignedTo ? 'przypisany' : 'nowy';
-
-    await address.save();
-
-    req.flash('success', 'Suplement został usunięty');
-    res.redirect(`/addresses/${address._id}`);
 });
 
 router.get('/:id/supplement/docx', isLoggedIn, async (req, res) => {
-    const address = await Address.findById(req.params.id);
+    try {
+        const address = await Address.findById(req.params.id);
 
-    if (!address) {
-        req.flash('error', 'Nie znaleziono adresu');
-        return res.redirect('/addresses');
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        if (!canEditAssignedAddress(address, req.session.user)) {
+            req.flash('error', 'Nie masz uprawnień do pobrania suplementu dla tego adresu.');
+            return res.redirect(`/addresses/${req.params.id}`);
+        }
+
+        if (!hasSupplementData(address.supplement)) {
+            req.flash('error', 'Najpierw uzupełnij suplement');
+            return res.redirect(`/addresses/${address._id}`);
+        }
+
+        const buffer = generateSupplementDocx(address);
+
+        function sanitizeFileName(value) {
+            return String(value)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9._-]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
+        const shortNamePart = sanitizeFileName(address.shortName || 'obiekt');
+        const safeFileName = `suplement-${shortNamePart}.docx`;
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${safeFileName}"`
+        );
+
+        res.send(buffer);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się wygenerować pliku Word.');
+        res.redirect('/addresses');
     }
-
-    if (!canEditAssignedAddress(address, req.session.user)) {
-        req.flash('error', 'Nie masz uprawnień do pobrania suplementu dla tego adresu.');
-        return res.redirect(`/addresses/${req.params.id}`);
-    }
-
-    if (!hasSupplementData(address.supplement)) {
-        req.flash('error', 'Najpierw uzupełnij suplement');
-        return res.redirect(`/addresses/${address._id}`);
-    }
-
-    const buffer = generateSupplementDocx(address);
-
-    const safeFileName = `suplement-${address._id}.docx`;
-
-
-    res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    );
-    res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${safeFileName}"`
-    );
-
-    res.send(buffer);
 });
 
 router.get('/:id', isLoggedIn, async (req, res) => {
-    const address = await Address.findById(req.params.id)
-        .populate('assignedTo')
-        .populate('supplement.updatedBy');
+    try {
+        const address = await Address.findById(req.params.id)
+            .populate('assignedTo')
+            .populate('supplement.updatedBy');
 
-    if (!address) {
-        req.flash('error', 'Nie znaleziono adresu');
-        return res.redirect('/addresses');
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        const canUnassign =
+            address.assignedTo &&
+            (String(address.assignedTo._id) === req.session.user.id || req.session.user.role === 'admin');
+
+        const canEditSupplement = canEditAssignedAddress(address, req.session.user);
+
+        res.render('addresses/show', {
+            title: 'Szczegóły adresu',
+            address,
+            hasSupplement: hasSupplementData(address.supplement),
+            canUnassign,
+            canEditSupplement
+        });
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się pobrać adresu.');
+        res.redirect('/addresses');
     }
-
-    const canUnassign =
-        address.assignedTo &&
-        (String(address.assignedTo._id) === req.session.user.id || req.session.user.role === 'admin');
-
-    const canEditSupplement = canEditAssignedAddress(address, req.session.user);
-
-    res.render('addresses/show', {
-        title: 'Szczegóły adresu',
-        address,
-        hasSupplement: hasSupplementData(address.supplement),
-        canUnassign,
-        canEditSupplement
-    });
 });
 
 module.exports = router;

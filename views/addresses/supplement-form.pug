@@ -4,170 +4,327 @@ block content
     .card
         h2 Formularz suplementu
 
-        p
-            strong Adres:
-            |  #{address.street} #{address.buildingNumber}, #{address.postalCode} #{address.city}
+        .details-grid
+            .detail-item
+                span.detail-label Nazwa skrócona
+                span.detail-value= address.shortName
+
+            .detail-item
+                span.detail-label Tytuł
+                span.detail-value= address.title
+
+            .detail-item
+                span.detail-label Kategoria
+                span.detail-value= address.category
+
+            .detail-item
+                span.detail-label Adres
+                span.detail-value= address.address
+
+            .detail-item
+                span.detail-label Miasto
+                span.detail-value= address.city
+
+            if address.latitude
+                .detail-item
+                    span.detail-label Szerokość geograficzna
+                    span.detail-value= address.latitude
+
+            if address.longitude
+                .detail-item
+                    span.detail-label Długość geograficzna
+                    span.detail-value= address.longitude
+
+            .detail-item
+                span.detail-label Typ syreny
+                span.detail-value= address.sirenType || '-'
+
+            if address.sirenPower
+                .detail-item
+                    span.detail-label Moc syreny
+                    span.detail-value= address.sirenPower
 
         if errors && errors.length
             .flash.flash-error
                 each err in errors
                     p= err.msg
 
-        form(action=`/addresses/${address._id}/supplement` method="POST")
-            .form-group
-                label(for="objectNumber") ID obiektu
-                input#objectNumber(type="text" name="objectNumber" required value=formData.objectNumber)
+        form(action=`/addresses/${address._id}/supplement` method="POST" enctype="multipart/form-data")
+            .form-section
+                h3 Dane identyfikacyjne obiektu
 
-            .form-group
-                label(for="visionDate") Data wizji lokalnej
-                input#visionDate(type="date" name="visionDate" required value=formData.visionDate)
+                .details-grid
+                    .form-group
+                        label(for="objectNumber") ID obiektu
+                        input#objectNumber(type="text" name="objectNumber" required value=formData.objectNumber)
 
-            .form-group
-                label(for="latitude") Szerokość geograficzna
-                input#latitude(type="text" name="latitude" required value=formData.latitude)
+                    .form-group
+                        label(for="visionDate") Data wizji lokalnej
+                        input#visionDate(type="date" name="visionDate" required value=formData.visionDate)
 
-            .form-group
-                label(for="longitude") Długość geograficzna
-                input#longitude(type="text" name="longitude" required value=formData.longitude)
+                    .form-group
+                        label.checkbox-row
+                            input#lift(type="checkbox" name="lift" checked=formData.lift)
+                            span Obiekt wymaga wzwyżki
 
-            .form-group
-                label(for="sirenType") Typ planowanej syreny
-                input#sirenType(type="text" name="sirenType" value=formData.sirenType)
+            .form-section
+                h3 Lokalizacja montażu syreny
 
-            .form-group
-                label(for="sirenLocation") Miejsce montażu syreny
-                input#sirenLocation(type="text" name="sirenLocation" required value=formData.sirenLocation)
+                .details-grid
+                    .form-group
+                        label(for="sirenLocation") Miejsce montażu syreny
+                        input#sirenLocation(type="text" name="sirenLocation" required value=formData.sirenLocation)
 
-            .form-group
-                label(for="sirenMounting") Sposób posadowienia syreny
-                select#sirenMounting(name="sirenMounting" required)
-                    each option in sirenMountingOptions
-                        option(value=option selected=formData.sirenMounting === option)= option
+                    .form-group
+                        label(for="speakerLocation") Miejsce montażu głośnika
+                        input#speakerLocation(type="text" name="speakerLocation" required value=formData.speakerLocation)
 
-            .form-group
-                label(for="powerSupply") Zasilanie syreny
-                input#powerSupply(type="number" step="0.01" name="powerSupply" value=formData.powerSupply)
+                    .form-group
+                        label(for="speakerHeight") Wysokość montażu głośnika
+                        input#speakerHeight(type="number" step="0.1" name="speakerHeight" value=formData.speakerHeight)
 
-            .form-group
-                label
-                    input#powerBool(type="checkbox" name="powerBool" checked=formData.powerBool)
-                    |  Zasilanie znajduje się w tym samym pomieszczeniu co sterownik
+                    .form-group
+                        label(for="antennaGSM") Miejsce montażu anteny GSM
+                        select#antennaGSM(name="antennaGSM" required)
+                            option(value="") Wybierz...
+                            each option in gsmMountingOptions
+                                option(value=option selected=formData.antennaGSM === option)= option
 
-            .form-group#powerLocationGroup
-                label(for="powerLocation") Lokalizacja punktu przyłączenia zasilania
-                input#powerLocation(type="text" name="powerLocation" value=formData.powerLocation)
+                    .form-group
+                        label(for="antennaCable") Długość kabla antenowego
+                        input#antennaCable(type="number" step="0.1" name="antennaCable" value=formData.antennaCable)
 
-            .form-group
-                label
-                    input#lightningProtection(type="checkbox" name="lightningProtection" checked=formData.lightningProtection)
-                    |  Budynek posiada instalację odgromową
+                    .form-group
+                        label(for="sirenMounting") Sposób posadowienia masztu
+                        select#sirenMounting(name="sirenMounting" required)
+                            option(value="") Wybierz...
+                            each option in sirenMountingOptions
+                                option(value=option selected=formData.sirenMounting === option)= option
 
-            .form-group#buildingHeightGroup
-                label(for="buildingHeight") Wysokość budynku
-                input#buildingHeight(type="number" step="0.01" name="buildingHeight" value=formData.buildingHeight)
+            .form-section
+                h3 Zasilanie
 
-            .form-group#lightningProtectionLengthGroup
-                label(for="lightningProtectionLength") Długość odgromu
-                input#lightningProtectionLength(type="number" step="0.01" name="lightningProtectionLength" value=formData.lightningProtectionLength)
+                .details-grid
+                    .form-group
+                        label.checkbox-row
+                            input#powerBool(type="checkbox" name="powerBool" checked=formData.powerBool)
+                            span Zasilanie znajduje się w tym samym pomieszczeniu co sterownik
 
-            .form-group
-                label(for="groundType") Rodzaj podłoża wokół budynku (dla wykonania uziomu)
-                select#groundType(name="groundType" required)
-                    each option in groundTypeOptions
-                        option(value=option selected=formData.groundType === option)= option
+                    .form-group
+                        label(for="powerLocation") Lokalizacja punktu przyłączenia zasilania
+                        select#powerLocation(name="powerLocation" required)
+                            option(value="") Wybierz...
+                            each option in connectionTypeOptions
+                                option(value=option selected=formData.powerLocation === option)= option
 
-            .form-group
-                label(for="passageMethod") Sposób wykonania przejścia kablowego
-                select#passageMethod(name="passageMethod" required)
-                    each option in passageMethodOptions
-                        option(value=option selected=formData.passageMethod === option)= option
 
-            .form-group
-                label(for="roofCovering") Rodzaj poszycia dachu
-                select#roofCovering(name="roofCovering" required)
-                    each option in roofCoveringOptions
-                        option(value=option selected=formData.roofCovering === option)= option
+                    .form-group
+                        label(for="fuseBoxLocation") Lokalizacja systemowej skrzynki bezpiecznikowej
+                        input#fuseBoxLocation(type="text" name="fuseBoxLocation" value=formData.fuseBoxLocation)
 
-            .form-group
-                label
-                    input#lan(type="checkbox" name="lan" checked=formData.lan)
-                    |  Planowane jest podłączenie kabla LAN
+                    .form-group
+                        label(for="powerLocationDistance") Odległość kabla od Skrzynki bezpiecznikowej do punktu poboru energii
+                        input#powerLocationDistance(type="number" step="0.1" name="powerLocationDistance" value=formData.powerLocationDistance)
 
-            .form-group#lanLengthGroup
-                label(for="lanLength") Odległość od gniazda sieciowego lub serwerowni
-                input#lanLength(type="number" step="0.01" name="lanLength" value=formData.lanLength)
+                    .form-group
+                        label(for="sirenDistance") Odległość syreny od punktu Skrzynki bezpiecznikowej
+                        input#sirenDistance(type="number" step="0.1" name="sirenDistance" value=formData.sirenDistance)
 
-            .form-group#lanWallsGroup
-                label(for="lanWalls") Ilość przebić przez ściany koniecznych do wykonania
-                input#lanWalls(type="number" name="lanWalls" value=formData.lanWalls)
+                    .form-group#sirenWallsGroup
+                        label(for="sirenWalls") Ilość przebić przez ściany dla syreny
+                        input#sirenWalls(type="number" name="sirenWalls" value=formData.sirenWalls)
 
-            .form-group#lanRouteGroup
-                label(for="lanRoute") Planowana trasa kabli
-                textarea#lanRoute(name="lanRoute" rows="4")= formData.lanRoute
+            .form-section
+                h3 Instalacja odgromowa
 
-            .topbar
-                button(type="submit") Zapisz suplement
-                a(href=`/addresses/${address._id}`) Anuluj
+                .details-grid
+                    .form-group
+                        label.checkbox-row
+                            input#lightningProtection(type="checkbox" name="lightningProtection" checked=formData.lightningProtection)
+                            span Budynek posiada instalację odgromową
 
-    script.
-        document.addEventListener('DOMContentLoaded', function () {
-            const powerBool = document.getElementById('powerBool');
-            const powerLocationGroup = document.getElementById('powerLocationGroup');
-            const powerLocation = document.getElementById('powerLocation');
+                    .form-group#lightningProtectionDistanceGroup
+                        label(for="lightningProtectionDistance") Odległość od masztu do istniejącego odgromu
+                        input#lightningProtectionDistance(type="number" step="0.01" name="lightningProtectionDistance" value=formData.lightningProtectionDistance)
 
-            const lightningProtection = document.getElementById('lightningProtection');
-            const buildingHeightGroup = document.getElementById('buildingHeightGroup');
-            const buildingHeight = document.getElementById('buildingHeight');
-            const lightningProtectionLengthGroup = document.getElementById('lightningProtectionLengthGroup');
-            const lightningProtectionLength = document.getElementById('lightningProtectionLength');
+                    .form-group#buildingHeightGroup
+                        label(for="buildingHeight") Wysokość budynku
+                        input#buildingHeight(type="number" step="0.01" name="buildingHeight" value=formData.buildingHeight)
 
-            const lan = document.getElementById('lan');
-            const lanLengthGroup = document.getElementById('lanLengthGroup');
-            const lanLength = document.getElementById('lanLength');
-            const lanWallsGroup = document.getElementById('lanWallsGroup');
-            const lanWalls = document.getElementById('lanWalls');
-            const lanRouteGroup = document.getElementById('lanRouteGroup');
-            const lanRoute = document.getElementById('lanRoute');
+                    .form-group#lightningProtectionLengthGroup
+                        label(for="lightningProtectionLength") Szacunkowa długość instalacji odgromowej do wykonania
+                        input#lightningProtectionLength(type="number" step="0.01" name="lightningProtectionLength" value=formData.lightningProtectionLength)
 
-            function toggleGroup(group, field, show) {
-                if (!group || !field) return;
+                    .form-group
+                        label(for="groundType") Rodzaj podłoża wokół budynku
+                        select#groundType(name="groundType" required)
+                            option(value="") Wybierz...
+                            each option in groundTypeOptions
+                                option(value=option selected=formData.groundType === option)= option
+            .form-section
+                h3 Przebicie na dach
+                .details-grid
+                    .form-group
+                        label(for="passageMethod") Sposób wykonania przejścia kablowego
+                        select#passageMethod(name="passageMethod" required)
+                            option(value="") Wybierz...
+                            each option in passageMethodOptions
+                                option(value=option selected=formData.passageMethod === option)= option
 
-                group.style.display = show ? '' : 'none';
+                    .form-group
+                        label(for="roofCovering") Rodzaj poszycia dachu
+                        select#roofCovering(name="roofCovering" required)
+                            option(value="") Wybierz...
+                            each option in roofCoveringOptions
+                                option(value=option selected=formData.roofCovering === option)= option
 
-                if (field.type === 'checkbox') {
-                    field.checked = show ? field.checked : false;
-                } else if (!show) {
-                    field.value = '';
+            .form-section
+                h3 Okablowanie LAN
+
+                .details-grid
+                    .form-group
+                        label.checkbox-row
+                            input#lan(type="checkbox" name="lan" checked=formData.lan)
+                            span Planowane jest podłączenie kabla LAN
+
+                    .form-group#lanLengthGroup
+                        label(for="lanLength") Odległość od gniazda sieciowego lub serwerowni
+                        input#lanLength(type="number" step="0.01" name="lanLength" value=formData.lanLength)
+
+                    .form-group#lanWallsGroup
+                        label(for="lanWalls") Ilość przebić przez ściany dla LAN
+                        input#lanWalls(type="number" name="lanWalls" value=formData.lanWalls)
+            .form-section
+                h3 Trasa kablowa
+                .details-grid
+                    .form-group
+                        label(for="lanRoute") Planowana trasa kabli kabli zasilających i sterujących.
+                        textarea#lanRoute(name="lanRoute" rows="4")= formData.lanRoute
+
+            .form-section
+                h3 Dokumentacja fotograficzna
+
+                .details-grid
+                    .form-group
+                        label(for="photo1") Zdjęcie lokalizacji syreny
+                        input#photo1(type="file" name="photo1" accept="image/*")
+
+                    .form-group
+                        label(for="photo2") Zdjęcie planowanej trasy kabla zasilającego
+                        input#photo2(type="file" name="photo2" accept="image/*")
+
+                    .form-group
+                        label(for="photo3") Zdjęcie punktu przyłączenia
+                        input#photo3(type="file" name="photo3" accept="image/*")
+
+                    .form-group
+                        label(for="photo4") Zdjęcie planowanej trasy kabla sterującego
+                        input#photo4(type="file" name="photo4" accept="image/*")
+
+                    .form-group
+                        label(for="photo5") Zdjęcie wpięcia do sieci
+                        input#photo5(type="file" name="photo5" accept="image/*")
+
+                    .form-group
+                        label(for="photo6") Zdjęcie planowanej lokalizacji masztu
+                        input#photo6(type="file" name="photo6" accept="image/*")
+
+            .form-section
+                h3 Rzut budynku
+
+                .form-group
+                    label(for="photo7") Dodaj zdjęcie rzutu budynku
+                    input#photo7(type="file" name="photo7" accept="image/*")
+
+            .form-section
+                h3 Schemat instalacji
+
+                .form-group
+                    label(for="photo8") Dodaj zdjęcie schematu instalacji
+                    input#photo8(type="file" name="photo8" accept="image/*")
+
+
+            .form-section
+                h3 Kontakt i uwagi
+
+                .details-grid
+                    .form-group
+                        label(for="contact_firstname") Imię kontaktowe
+                        input#contact_firstname(type="text" name="contact[firstname]" value=formData.contact.firstname)
+
+                    .form-group
+                        label(for="contact_lastname") Nazwisko kontaktowe
+                        input#contact_lastname(type="text" name="contact[lastname]" value=formData.contact.lastname)
+
+                    .form-group
+                        label(for="contact_phone") Numer kontaktowy
+                        input#contact_phone(type="text" name="contact[phone]" value=formData.contact.phone)
+
+                .form-group
+                    label(for="comments") Uwagi
+                    textarea#comments(name="comments" rows="5")= formData.comments
+
+            .actions
+                button(type="submit") Zapisz i pobierz DOCX
+                a.button.button-secondary(href=`/addresses/${address._id}`) Anuluj
+
+        script.
+            document.addEventListener('DOMContentLoaded', function () {
+                const powerBool = document.getElementById('powerBool');
+                const sirenWallsGroup = document.getElementById('sirenWallsGroup');
+                const sirenWalls = document.getElementById('sirenWalls');
+
+                const lightningProtection = document.getElementById('lightningProtection');
+                const lightningProtectionDistanceGroup = document.getElementById('lightningProtectionDistanceGroup');
+                const lightningProtectionDistance = document.getElementById('lightningProtectionDistance');
+                const buildingHeightGroup = document.getElementById('buildingHeightGroup');
+                const buildingHeight = document.getElementById('buildingHeight');
+                const lightningProtectionLengthGroup = document.getElementById('lightningProtectionLengthGroup');
+                const lightningProtectionLength = document.getElementById('lightningProtectionLength');
+
+                const lan = document.getElementById('lan');
+                const lanLengthGroup = document.getElementById('lanLengthGroup');
+                const lanLength = document.getElementById('lanLength');
+                const lanWallsGroup = document.getElementById('lanWallsGroup');
+                const lanWalls = document.getElementById('lanWalls');
+
+                function toggleGroup(group, field, show) {
+                    if (!group || !field) return;
+
+                    group.style.display = show ? '' : 'none';
+
+                    if (!show) {
+                        if (field.type === 'checkbox') {
+                            field.checked = false;
+                        } else {
+                            field.value = '';
+                        }
+                    }
                 }
-            }
 
-            function updatePowerSection() {
-                const showPowerLocation = !powerBool.checked;
-                toggleGroup(powerLocationGroup, powerLocation, showPowerLocation);
-            }
+                function updatePowerSection() {
+                    const showSirenWalls = powerBool.checked;
+                    toggleGroup(sirenWallsGroup, sirenWalls, !showSirenWalls);
+                }
 
-            function updateLightningSection() {
-                const hasLightningProtection = lightningProtection.checked;
+                function updateLightningSection() {
+                    const hasLightningProtection = lightningProtection.checked;
+                    toggleGroup(lightningProtectionDistanceGroup, lightningProtectionDistance, hasLightningProtection);
+                    toggleGroup(buildingHeightGroup, buildingHeight, !hasLightningProtection);
+                    toggleGroup(lightningProtectionLengthGroup, lightningProtectionLength, !hasLightningProtection);
+                }
 
-                // Jeśli jest odgrom → pokazujemy długość istniejącego
-                // Jeśli NIE ma → pokazujemy długość do wykonania
+                function updateLanSection() {
+                    const showLanFields = lan.checked;
+                    toggleGroup(lanLengthGroup, lanLength, showLanFields);
+                    toggleGroup(lanWallsGroup, lanWalls, showLanFields);
+                }
 
-                toggleGroup(buildingHeightGroup, buildingHeight, !hasLightningProtection);
-                toggleGroup(lightningProtectionLengthGroup, lightningProtectionLength, !hasLightningProtection);
-            }
+                powerBool.addEventListener('change', updatePowerSection);
+                lightningProtection.addEventListener('change', updateLightningSection);
+                lan.addEventListener('change', updateLanSection);
 
-            function updateLanSection() {
-                const showLanFields = lan.checked;
-                toggleGroup(lanLengthGroup, lanLength, showLanFields);
-                toggleGroup(lanWallsGroup, lanWalls, showLanFields);
-                toggleGroup(lanRouteGroup, lanRoute, showLanFields);
-            }
-
-            powerBool.addEventListener('change', updatePowerSection);
-            lightningProtection.addEventListener('change', updateLightningSection);
-            lan.addEventListener('change', updateLanSection);
-
-            updatePowerSection();
-            updateLightningSection();
-            updateLanSection();
-        });
+                updatePowerSection();
+                updateLightningSection();
+                updateLanSection();
+            });

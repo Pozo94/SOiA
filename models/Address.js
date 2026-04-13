@@ -1,6 +1,26 @@
 const mongoose = require('mongoose');
-const { ROOF_COVERING, PASSAGE_METHOD, SIREN_MOUNTING, GROUND_TYPE}=require('../constants/enums.js');
+const { ROOF_COVERING, PASSAGE_METHOD, SIREN_MOUNTING, GROUND_TYPE, CONNECTION_TYPE, GSM_MOUNTING}=require('../constants/enums.js');
 
+const contactSchema = new mongoose.Schema(
+    {
+        firstname: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        lastname: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        phone: {
+            type: String,
+            default: '',
+            trim: true
+        }
+    },
+    { _id: false }
+);
 const supplementSchema = new mongoose.Schema(
     {
         objectNumber: {
@@ -12,25 +32,34 @@ const supplementSchema = new mongoose.Schema(
             type: Date,
             default: null
         },
-        latitude: {
-            type: String,
-            default: '',
-            trim: true
+        lift: {
+            type: Boolean,
+            default: false
         },
-        longitude: {
-            type: String,
-            default: '',
-            trim: true
-        },
-        sirenType: {
-            type: String,
-            default: 'Gibon 600',
-            trim: true
-        },
+
         sirenLocation: {
             type: String,
             default: '',
             trim: true
+        },
+        speakerLocation: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        speakerHeight: {
+            type: Number,
+            default: null
+        },
+        antennaGSM: {
+            type: String,
+            enum: GSM_MOUNTING,
+            default: '',
+            trim: true
+        },
+        antennaCable:{
+            type:Number,
+            default:null
         },
         sirenMounting: {
             type: String,
@@ -38,23 +67,47 @@ const supplementSchema = new mongoose.Schema(
             default: '',
             trim: true
         },
+        powerLocation: {
+          type:String,
+          enum:CONNECTION_TYPE,
+          default:'',
+          trim: true
+
+        },
+        powerBool: {
+            type: Boolean,
+            default: false
+        },
         powerSupply: {
             type: Number,
             default: null
         },
-        powerBool: {
-            type: Boolean,
-            default: '',
-            trim: true
-        },
-        powerLocation: {
+        fuseBoxLocation: {
             type: String,
             default: '',
             trim: true
         },
+        powerLocationDistance: {
+            type: Number,
+            default: null,
+
+        },
+        sirenDistance: {
+            type: Number,
+            default: null,
+
+        },
+        sirenWalls:{
+          type: Number,
+          default:null
+        },
         lightningProtection: {
             type: Boolean,
             default: false
+        },
+        lightningProtectionDistance: {
+          type: Number,
+          default:null
         },
         buildingHeight: {
             type: Number,
@@ -99,6 +152,15 @@ const supplementSchema = new mongoose.Schema(
             default: '',
             trim: true
         },
+        comments: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        contact:{
+          type:contactSchema,
+          default:undefined
+        },
         wordpressUrl: {
             type: String,
             default: ''
@@ -118,30 +180,48 @@ const supplementSchema = new mongoose.Schema(
 );
 
 const addressSchema = new mongoose.Schema(
-    {
-        street: {
+    {   shortName:{
             type: String,
             required: true,
             trim: true
         },
-        buildingNumber: {
+        title:{
             type: String,
-            default: '',
+            required: true,
             trim: true
         },
-        apartmentNumber: {
+        category:{
             type: String,
-            default: '',
+            required: true,
             trim: true
         },
-        postalCode: {
+        address: {
             type: String,
-            default: '',
+            required: true,
             trim: true
         },
         city: {
             type: String,
             required: true,
+            trim: true
+        },
+        latitude: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        longitude: {
+            type: String,
+            default: '',
+            trim: true
+        },
+        sirenPower: {
+            type: String,
+            trim: true
+        },
+        sirenType: {
+            type: String,
+            default:'Gibon',
             trim: true
         },
         status: {

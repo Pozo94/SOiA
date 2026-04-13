@@ -37,7 +37,7 @@ block content
             input#q(
               type="text"
               name="q"
-              placeholder="Ulica, miasto, kod, numer..."
+              placeholder="Skrót, tytuł, adres, miasto..."
               value=filters.q
             )
 
@@ -62,8 +62,10 @@ block content
             select#sort(name="sort")
               option(value="createdAt_desc" selected=filters.sort === 'createdAt_desc') Najnowsze
               option(value="createdAt_asc" selected=filters.sort === 'createdAt_asc') Najstarsze
-              option(value="street_asc" selected=filters.sort === 'street_asc') Ulica A-Z
-              option(value="street_desc" selected=filters.sort === 'street_desc') Ulica Z-A
+              option(value="shortName_asc" selected=filters.sort === 'shortName_asc') Skrót A-Z
+              option(value="shortName_desc" selected=filters.sort === 'shortName_desc') Skrót Z-A
+              option(value="title_asc" selected=filters.sort === 'title_asc') Tytuł A-Z
+              option(value="title_desc" selected=filters.sort === 'title_desc') Tytuł Z-A
               option(value="city_asc" selected=filters.sort === 'city_asc') Miasto A-Z
               option(value="city_desc" selected=filters.sort === 'city_desc') Miasto Z-A
               option(value="status_asc" selected=filters.sort === 'status_asc') Status A-Z
@@ -80,9 +82,10 @@ block content
         table
           thead
             tr
-              th Ulica
-              th Nr
-              th Kod
+              th Skrót
+              th Tytuł
+              th Kategoria
+              th Adres
               th Miasto
               th Status
               th Przypisany
@@ -90,9 +93,10 @@ block content
             each address in addresses
               tr
                 td
-                  a(href=`/addresses/${address._id}`)= address.street
-                td= address.buildingNumber || '-'
-                td= address.postalCode || '-'
+                  a(href=`/addresses/${address._id}`)= address.shortName
+                td= address.title
+                td= address.category
+                td= address.address
                 td= address.city
                 td
                   span(class=`badge badge-${address.status}`)= address.status

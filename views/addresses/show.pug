@@ -2,24 +2,47 @@ extends ../layout
 
 block content
     .card
-        h2 Szczegóły adresu
+        h2 Szczegóły obiektu
 
         .details-grid
             .detail-item
-                span.detail-label Ulica
-                span.detail-value= address.street
+                span.detail-label Skrót
+                span.detail-value= address.shortName
 
             .detail-item
-                span.detail-label Nr
-                span.detail-value= address.buildingNumber || '-'
+                span.detail-label Tytuł
+                span.detail-value= address.title
 
             .detail-item
-                span.detail-label Kod
-                span.detail-value= address.postalCode || '-'
+                span.detail-label Kategoria
+                span.detail-value= address.category
+
+            .detail-item
+                span.detail-label Adres
+                span.detail-value= address.address
 
             .detail-item
                 span.detail-label Miasto
                 span.detail-value= address.city
+
+            if address.latitude
+                .detail-item
+                    span.detail-label Szerokość geograficzna
+                    span.detail-value= address.latitude
+
+            if address.longitude
+                .detail-item
+                    span.detail-label Długość geograficzna
+                    span.detail-value= address.longitude
+
+            .detail-item
+                span.detail-label Typ syreny
+                span.detail-value= address.sirenType || '-'
+
+            if address.sirenPower
+                .detail-item
+                    span.detail-label Moc syreny
+                    span.detail-value= address.sirenPower
 
             .detail-item
                 span.detail-label Status
@@ -28,7 +51,7 @@ block content
 
             .detail-item
                 span.detail-label Przypisany
-                span.detail-value= address.assignedTo ? address.assignedTo.firstname+ " "+address.assignedTo.lastname  : 'brak'
+                span.detail-value= address.assignedTo ? address.assignedTo.username : 'brak'
 
         if !address.assignedTo
             .actions
@@ -45,97 +68,155 @@ block content
         if hasSupplement
             .details-grid
                 .detail-item
-                    span.detail-label ID obiektu:
+                    span.detail-label ID obiektu
                     span.detail-value= address.supplement.objectNumber
 
                 .detail-item
-                    span.detail-label Data wizji lokalnej:
+                    span.detail-label Data wizji lokalnej
                     span.detail-value= address.supplement.visionDate ? new Date(address.supplement.visionDate).toLocaleDateString('pl-PL') : '-'
 
                 .detail-item
-                    span.detail-label Współrzędne:
-                    span.detail-value #{address.supplement.latitude}, #{address.supplement.longitude}
+                    span.detail-label Obiekt posiada windę
+                    span.detail-value= address.supplement.lift ? 'TAK' : 'NIE'
 
-                .detail-item
-                    span.detail-label Typ planowanej syreny:
-                    span.detail-value= address.supplement.sirenType
-
-                .detail-item
-                    span.detail-label Miejsce montażu syreny:
-                    span.detail-value= address.supplement.sirenLocation
-
-                .detail-item
-                    span.detail-label Sposób posadowienia syreny:
-                    span.detail-value= address.supplement.sirenMounting
-
-                if address.supplement.powerSupply !== null && address.supplement.powerSupply !== undefined && address.supplement.powerSupply !== ''
+                if address.supplement.sirenLocation
                     .detail-item
-                        span.detail-label Odległość syreny od punktu zasilania:
-                        span.detail-value= address.supplement.powerSupply
+                        span.detail-label Miejsce montażu syreny
+                        span.detail-value= address.supplement.sirenLocation
 
-                .detail-item
-                    span.detail-label Zasilanie w tym samym pomieszczeniu co sterownik:
-                    span.detail-value= address.supplement.powerBool ? 'TAK' : 'NIE'
-
-                if !address.supplement.powerBool && address.supplement.powerLocation
+                if address.supplement.speakerLocation
                     .detail-item
-                        span.detail-label Lokalizacja punktu przyłączenia zasilania:
+                        span.detail-label Miejsce montażu głośnika
+                        span.detail-value= address.supplement.speakerLocation
+
+                if address.supplement.speakerHeight !== null && address.supplement.speakerHeight !== undefined && address.supplement.speakerHeight !== ''
+                    .detail-item
+                        span.detail-label Wysokość montażu głośnika
+                        span.detail-value= address.supplement.speakerHeight
+
+                if address.supplement.antennaGSM
+                    .detail-item
+                        span.detail-label Sposób montażu anteny GSM
+                        span.detail-value= address.supplement.antennaGSM
+
+                if address.supplement.antennaCable !== null && address.supplement.antennaCable !== undefined && address.supplement.antennaCable !== ''
+                    .detail-item
+                        span.detail-label Długość kabla antenowego
+                        span.detail-value= address.supplement.antennaCable
+
+                if address.supplement.sirenMounting
+                    .detail-item
+                        span.detail-label Sposób posadowienia syreny
+                        span.detail-value= address.supplement.sirenMounting
+
+                if address.supplement.powerLocation
+                    .detail-item
+                        span.detail-label Typ przyłącza zasilania
                         span.detail-value= address.supplement.powerLocation
 
                 .detail-item
-                    span.detail-label Budynek posiada instalację odgromową:
+                    span.detail-label Zasilanie w tym samym pomieszczeniu co sterownik
+                    span.detail-value= address.supplement.powerBool ? 'TAK' : 'NIE'
+
+                if address.supplement.powerSupply !== null && address.supplement.powerSupply !== undefined && address.supplement.powerSupply !== ''
+                    .detail-item
+                        span.detail-label Odległość syreny od punktu zasilania
+                        span.detail-value= address.supplement.powerSupply
+
+                if address.supplement.fuseBoxLocation
+                    .detail-item
+                        span.detail-label Lokalizacja rozdzielni / bezpieczników
+                        span.detail-value= address.supplement.fuseBoxLocation
+
+                if address.supplement.powerLocationDistance !== null && address.supplement.powerLocationDistance !== undefined && address.supplement.powerLocationDistance !== ''
+                    .detail-item
+                        span.detail-label Odległość do punktu przyłączenia zasilania
+                        span.detail-value= address.supplement.powerLocationDistance
+
+                if address.supplement.powerBool && address.supplement.sirenDistance !== null && address.supplement.sirenDistance !== undefined && address.supplement.sirenDistance !== ''
+                    .detail-item
+                        span.detail-label Odległość do syreny
+                        span.detail-value= address.supplement.sirenDistance
+
+                if address.supplement.sirenWalls !== null && address.supplement.sirenWalls !== undefined && address.supplement.sirenWalls !== ''
+                    .detail-item
+                        span.detail-label Ilość przebić przez ściany dla syreny
+                        span.detail-value= address.supplement.sirenWalls
+
+                .detail-item
+                    span.detail-label Budynek posiada instalację odgromową
                     span.detail-value= address.supplement.lightningProtection ? 'TAK' : 'NIE'
+
+                if address.supplement.lightningProtection && address.supplement.lightningProtectionDistance !== null && address.supplement.lightningProtectionDistance !== undefined && address.supplement.lightningProtectionDistance !== ''
+                    .detail-item
+                        span.detail-label Odległość do istniejącej instalacji odgromowej
+                        span.detail-value= address.supplement.lightningProtectionDistance
 
                 if !address.supplement.lightningProtection
                     if address.supplement.buildingHeight !== null && address.supplement.buildingHeight !== undefined && address.supplement.buildingHeight !== ''
                         .detail-item
-                            span.detail-label Wysokość budynku:
+                            span.detail-label Wysokość budynku
                             span.detail-value= address.supplement.buildingHeight
 
                     if address.supplement.lightningProtectionLength !== null && address.supplement.lightningProtectionLength !== undefined && address.supplement.lightningProtectionLength !== ''
                         .detail-item
-                            span.detail-label Szacunkowa długość instalacji odgromowej do wykonania:
+                            span.detail-label Szacunkowa długość instalacji odgromowej do wykonania
                             span.detail-value= address.supplement.lightningProtectionLength
 
                 if address.supplement.groundType
                     .detail-item
-                        span.detail-label Rodzaj podłoża wokół budynku:
+                        span.detail-label Rodzaj podłoża wokół budynku
                         span.detail-value= address.supplement.groundType
 
                 if address.supplement.passageMethod
                     .detail-item
-                        span.detail-label Sposób wykonania przejścia kablowego:
+                        span.detail-label Sposób wykonania przejścia kablowego
                         span.detail-value= address.supplement.passageMethod
 
                 if address.supplement.roofCovering
                     .detail-item
-                        span.detail-label Rodzaj poszycia dachu:
+                        span.detail-label Rodzaj poszycia dachu
                         span.detail-value= address.supplement.roofCovering
 
                 .detail-item
-                    span.detail-label Planowane jest podłączenie kabla LAN:
+                    span.detail-label Planowane jest podłączenie kabla LAN
                     span.detail-value= address.supplement.lan ? 'TAK' : 'NIE'
 
                 if address.supplement.lan
                     if address.supplement.lanLength !== null && address.supplement.lanLength !== undefined && address.supplement.lanLength !== ''
                         .detail-item
-                            span.detail-label Odległość od gniazda sieciowego lub serwerowni:
+                            span.detail-label Odległość od gniazda sieciowego lub serwerowni
                             span.detail-value= address.supplement.lanLength
 
                     if address.supplement.lanWalls !== null && address.supplement.lanWalls !== undefined && address.supplement.lanWalls !== ''
                         .detail-item
-                            span.detail-label Ilość przebić przez ściany koniecznych do wykonania:
+                            span.detail-label Ilość przebić przez ściany dla LAN
                             span.detail-value= address.supplement.lanWalls
 
-                    if address.supplement.lanRoute
-                        .detail-item
-                            span.detail-label Planowana trasa kabli:
-                            span.detail-value= address.supplement.lanRoute
+                if address.supplement.lanRoute
+                    .detail-item
+                        span.detail-label Planowana trasa kabli LAN
+                        span.detail-value= address.supplement.lanRoute
+
+                if address.supplement.comments
+                    .detail-item
+                        span.detail-label Uwagi
+                        span.detail-value= address.supplement.comments
+
+                if address.supplement.contact && (address.supplement.contact.firstname || address.supplement.contact.lastname || address.supplement.contact.phone)
+                    .detail-item
+                        span.detail-label Osoba kontaktowa
+                        span.detail-value
+                            if address.supplement.contact.firstname || address.supplement.contact.lastname
+                                | #{address.supplement.contact.firstname} #{address.supplement.contact.lastname}
+                            if address.supplement.contact.phone
+                                br
+                                | #{address.supplement.contact.phone}
 
                 if address.supplement.updatedBy
                     .detail-item
-                        span.detail-label Ostatnia edycja:
-                        span.detail-value #{address.supplement.updatedBy.firstname} #{address.supplement.updatedBy.lastname} / #{new Date(address.supplement.updatedAt).toLocaleString('pl-PL')}
+                        span.detail-label Ostatnia edycja
+                        span.detail-value #{address.supplement.updatedBy.username} / #{new Date(address.supplement.updatedAt).toLocaleString('pl-PL')}
 
             if canEditSupplement
                 .actions

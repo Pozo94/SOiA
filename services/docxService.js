@@ -49,7 +49,7 @@ function generateSupplementDocx(address, photos = {}) {
             return tagValue;
         },
         getSize() {
-            return [420, 260];
+            return [600, 340];
         }
     });
 
@@ -128,8 +128,7 @@ function generateSupplementDocx(address, photos = {}) {
         photo4: photos.photo4 || null,
         photo5: photos.photo5 || null,
         photo6: photos.photo6 || null,
-        photo7: photos.photo7 || null,
-        photo8: photos.photo8 || null
+        photo7: photos.photo7 || null
     });
 
     return doc.getZip().generate({

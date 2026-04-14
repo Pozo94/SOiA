@@ -65,7 +65,7 @@ block content
                     .form-group
                         label.checkbox-row
                             input#lift(type="checkbox" name="lift" checked=formData.lift)
-                            span Obiekt wymaga wzwyżki
+                            span Obiekt wymaga zwyżki
 
             .form-section
                 h3 Lokalizacja montażu syreny
@@ -80,7 +80,7 @@ block content
                         input#speakerLocation(type="text" name="speakerLocation" required value=formData.speakerLocation)
 
                     .form-group
-                        label(for="speakerHeight") Wysokość montażu głośnika
+                        label(for="speakerHeight") Wysokość montażu głośnika (metry)
                         input#speakerHeight(type="number" step="0.1" name="speakerHeight" value=formData.speakerHeight)
 
                     .form-group
@@ -91,7 +91,7 @@ block content
                                 option(value=option selected=formData.antennaGSM === option)= option
 
                     .form-group
-                        label(for="antennaCable") Długość kabla antenowego
+                        label(for="antennaCable") Długość kabla antenowego (metry)
                         input#antennaCable(type="number" step="0.1" name="antennaCable" value=formData.antennaCable)
 
                     .form-group
@@ -123,11 +123,11 @@ block content
                         input#fuseBoxLocation(type="text" name="fuseBoxLocation" value=formData.fuseBoxLocation)
 
                     .form-group
-                        label(for="powerLocationDistance") Odległość kabla od Skrzynki bezpiecznikowej do punktu poboru energii
+                        label(for="powerLocationDistance") Odległość kabla od Skrzynki bezpiecznikowej do punktu poboru energii (metry)
                         input#powerLocationDistance(type="number" step="0.1" name="powerLocationDistance" value=formData.powerLocationDistance)
 
                     .form-group
-                        label(for="sirenDistance") Odległość syreny od punktu Skrzynki bezpiecznikowej
+                        label(for="sirenDistance") Odległość syreny od punktu Skrzynki bezpiecznikowej (metry)
                         input#sirenDistance(type="number" step="0.1" name="sirenDistance" value=formData.sirenDistance)
 
                     .form-group#sirenWallsGroup
@@ -144,20 +144,20 @@ block content
                             span Budynek posiada instalację odgromową
 
                     .form-group#lightningProtectionDistanceGroup
-                        label(for="lightningProtectionDistance") Odległość od masztu do istniejącego odgromu
-                        input#lightningProtectionDistance(type="number" step="0.01" name="lightningProtectionDistance" value=formData.lightningProtectionDistance)
+                        label(for="lightningProtectionDistance") Odległość od masztu do istniejącego odgromu (metry)
+                        input#lightningProtectionDistance(type="number" step="0.1" name="lightningProtectionDistance" value=formData.lightningProtectionDistance)
 
                     .form-group#buildingHeightGroup
-                        label(for="buildingHeight") Wysokość budynku
-                        input#buildingHeight(type="number" step="0.01" name="buildingHeight" value=formData.buildingHeight)
+                        label(for="buildingHeight") Wysokość budynku (metry)
+                        input#buildingHeight(type="number" step="0.1" name="buildingHeight" value=formData.buildingHeight)
 
                     .form-group#lightningProtectionLengthGroup
-                        label(for="lightningProtectionLength") Szacunkowa długość instalacji odgromowej do wykonania
-                        input#lightningProtectionLength(type="number" step="0.01" name="lightningProtectionLength" value=formData.lightningProtectionLength)
+                        label(for="lightningProtectionLength") Szacunkowa długość instalacji odgromowej do wykonania (metry)
+                        input#lightningProtectionLength(type="number" step="0.1" name="lightningProtectionLength" value=formData.lightningProtectionLength)
 
-                    .form-group
+                    .form-group#groundTypeGroup
                         label(for="groundType") Rodzaj podłoża wokół budynku
-                        select#groundType(name="groundType" required)
+                        select#groundType(name="groundType" )
                             option(value="") Wybierz...
                             each option in groundTypeOptions
                                 option(value=option selected=formData.groundType === option)= option
@@ -188,8 +188,8 @@ block content
                             span Planowane jest podłączenie kabla LAN
 
                     .form-group#lanLengthGroup
-                        label(for="lanLength") Odległość od gniazda sieciowego lub serwerowni
-                        input#lanLength(type="number" step="0.01" name="lanLength" value=formData.lanLength)
+                        label(for="lanLength") Odległość od gniazda sieciowego lub serwerowni (metry)
+                        input#lanLength(type="number" step="0.1" name="lanLength" value=formData.lanLength)
 
                     .form-group#lanWallsGroup
                         label(for="lanWalls") Ilość przebić przez ściany dla LAN
@@ -236,12 +236,7 @@ block content
                     label(for="photo7") Dodaj zdjęcie rzutu budynku
                     input#photo7(type="file" name="photo7" accept="image/*")
 
-            .form-section
-                h3 Schemat instalacji
 
-                .form-group
-                    label(for="photo8") Dodaj zdjęcie schematu instalacji
-                    input#photo8(type="file" name="photo8" accept="image/*")
 
 
             .form-section
@@ -265,7 +260,7 @@ block content
                     textarea#comments(name="comments" rows="5")= formData.comments
 
             .actions
-                button(type="submit") Zapisz i pobierz DOCX
+                button(type="submit" onclick="console.log('click')") Zapisz i pobierz DOCX
                 a.button.button-secondary(href=`/addresses/${address._id}`) Anuluj
 
         script.
@@ -273,7 +268,8 @@ block content
                 const powerBool = document.getElementById('powerBool');
                 const sirenWallsGroup = document.getElementById('sirenWallsGroup');
                 const sirenWalls = document.getElementById('sirenWalls');
-
+                const groundType = document.getElementById('groundType');
+                const groundTypeGroup = document.getElementById('groundTypeGroup');
                 const lightningProtection = document.getElementById('lightningProtection');
                 const lightningProtectionDistanceGroup = document.getElementById('lightningProtectionDistanceGroup');
                 const lightningProtectionDistance = document.getElementById('lightningProtectionDistance');
@@ -312,8 +308,8 @@ block content
                     toggleGroup(lightningProtectionDistanceGroup, lightningProtectionDistance, hasLightningProtection);
                     toggleGroup(buildingHeightGroup, buildingHeight, !hasLightningProtection);
                     toggleGroup(lightningProtectionLengthGroup, lightningProtectionLength, !hasLightningProtection);
+                   toggleGroup(groundTypeGroup, groundType, !hasLightningProtection);
                 }
-
                 function updateLanSection() {
                     const showLanFields = lan.checked;
                     toggleGroup(lanLengthGroup, lanLength, showLanFields);

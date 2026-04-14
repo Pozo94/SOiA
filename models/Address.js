@@ -78,10 +78,7 @@ const supplementSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        powerSupply: {
-            type: Number,
-            default: null
-        },
+
         fuseBoxLocation: {
             type: String,
             default: '',
@@ -99,7 +96,7 @@ const supplementSchema = new mongoose.Schema(
         },
         sirenWalls:{
           type: Number,
-          default:null
+          default:0
         },
         lightningProtection: {
             type: Boolean,
@@ -107,7 +104,7 @@ const supplementSchema = new mongoose.Schema(
         },
         lightningProtectionDistance: {
           type: Number,
-          default:null
+          default:0
         },
         buildingHeight: {
             type: Number,
@@ -115,7 +112,7 @@ const supplementSchema = new mongoose.Schema(
         },
         lightningProtectionLength: {
             type: Number,
-            default: null
+            default: 0
         },
         groundType: {
             type: String,

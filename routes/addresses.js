@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-
+const { uploadPhotosToSFTP } = require('../services/sftpService');
 const Address = require('../models/Address');
 const { isLoggedIn, canEditAssignedAddress } = require('../middleware/auth');
 const {
@@ -442,8 +442,7 @@ router.post(
         { name: 'photo4', maxCount: 1 },
         { name: 'photo5', maxCount: 1 },
         { name: 'photo6', maxCount: 1 },
-        { name: 'photo7', maxCount: 1 },
-        { name: 'photo8', maxCount: 1 }
+        { name: 'photo7', maxCount: 1 }
     ]),
     supplementValidators,
     async (req, res) => {
@@ -451,7 +450,7 @@ router.post(
 
         try {
             const address = await Address.findById(req.params.id).populate('assignedTo');
-
+            await uploadPhotosToSFTP(address, req.files);
             if (!address) {
                 req.flash('error', 'Nie znaleziono adresu');
                 return res.redirect('/addresses');
@@ -574,11 +573,12 @@ router.post(
                 photo5: req.files?.photo5?.[0]?.buffer || null,
                 photo6: req.files?.photo6?.[0]?.buffer || null,
                 photo7: req.files?.photo7?.[0]?.buffer || null,
-                photo8: req.files?.photo8?.[0]?.buffer || null
             };
 
             const buffer = generateSupplementDocx(address, photos);
-
+            const fs = require('fs');
+            fs.writeFileSync('test-output.docx', buffer);
+            console.log('DOCX size:', buffer.length);
             function sanitizeFileName(value) {
                 return String(value)
                     .normalize('NFD')

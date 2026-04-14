@@ -158,10 +158,7 @@ const supplementSchema = new mongoose.Schema(
           type:contactSchema,
           default:undefined
         },
-        wordpressUrl: {
-            type: String,
-            default: ''
-        },
+
         updatedAt: {
             type: Date,
             default: null
@@ -247,6 +244,20 @@ const addressSchema = new mongoose.Schema(
         supplement: {
             type: supplementSchema,
             default: undefined
+        },
+        soundEmissionPattern:{
+            type:String,
+            default:'',
+            trim:true
+        },
+        azimuth:{
+            type:Number,
+            default:0,
+
+        },
+        volume: {
+            type: Number,
+            default: 100,
         }
     },
     { timestamps: true }

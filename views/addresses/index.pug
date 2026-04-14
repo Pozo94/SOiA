@@ -66,16 +66,12 @@ block content
               option(value="free" selected=filters.assigned === 'free') Nieprzypisane
               option(value="assigned" selected=filters.assigned === 'assigned') Przypisane do kogokolwiek
               option(value="mine" selected=filters.assigned === 'mine') Tylko moje
-          .form-group
-            label(for="risk") Zagrożenie realizacji
-            select#risk(name="risk")
-              option(value="" selected=filters.risk === '') Wszystkie
-              option(value="yes" selected=filters.risk === 'yes') Tylko zagrożone
-              option(value="no" selected=filters.risk === 'no') Tylko niezagrożone
 
           .form-group
             label(for="sort") Sortowanie
             select#sort(name="sort")
+              option(value="category_asc" selected=filters.sort === 'category_asc') Kategoria A-Z
+              option(value="category_desc" selected=filters.sort === 'category_desc') Kategoria Z-A
               option(value="createdAt_desc" selected=filters.sort === 'createdAt_desc') Najnowsze
               option(value="createdAt_asc" selected=filters.sort === 'createdAt_asc') Najstarsze
               option(value="shortName_asc" selected=filters.sort === 'shortName_asc') Skrót A-Z

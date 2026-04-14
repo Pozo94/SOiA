@@ -243,7 +243,7 @@ router.get('/', isLoggedIn, async (req, res) => {
             status = '',
             assigned = '',
             risk = '',
-            sort = 'createdAt_desc'
+            sort = 'category_asc'
         } = req.query;
 
         const filter = {};
@@ -257,7 +257,8 @@ router.get('/', isLoggedIn, async (req, res) => {
                 { shortName: { $regex: q.trim(), $options: 'i' } },
                 { title: { $regex: q.trim(), $options: 'i' } },
                 { address: { $regex: q.trim(), $options: 'i' } },
-                { city: { $regex: q.trim(), $options: 'i' } }
+                { city: { $regex: q.trim(), $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } }
             ];
         }
 
@@ -304,12 +305,18 @@ router.get('/', isLoggedIn, async (req, res) => {
             case 'status_desc':
                 sortOption = { status: -1 };
                 break;
+            case 'category_asc':
+                sortOption = { category: 1 };
+                break;
+            case 'category_desc':
+                sortOption = { category: -1 };
+                break;
             case 'createdAt_asc':
                 sortOption = { createdAt: 1 };
                 break;
             case 'createdAt_desc':
             default:
-                sortOption = { createdAt: -1 };
+                sortOption = { category: 1 };
                 break;
         }
 

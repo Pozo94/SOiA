@@ -1,8 +1,9 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { uploadPhotosToSFTP } = require('../services/sftpService');
+const { uploadPhotosToSFTP,uploadSignedToSFTP,downloadSignedFromSFTP } = require('../services/sftpService');
 const Address = require('../models/Address');
-const { isLoggedIn, canEditAssignedAddress } = require('../middleware/auth');
+const User = require('../models/User');
+const { isLoggedIn, canEditAssignedAddress,isAdmin } = require('../middleware/auth');
 const {
     ROOF_COVERING,
     PASSAGE_METHOD,
@@ -12,10 +13,32 @@ const {
     GSM_MOUNTING
 } = require('../constants/enums.js');
 const { generateSupplementDocx } = require('../services/docxService');
+const riskValidators = [
+    body('riskReason')
+        .trim()
+        .notEmpty()
+        .withMessage('Podaj opis problemu.')
+];
+function generateObjectNumber(address) {
+    const year = new Date().getFullYear();
+
+    const cleanShortName = (address.shortName || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '')
+        .toUpperCase();
+
+    return `SOIA_${year}_UMK_${cleanShortName}`;
+}
 
 const router = express.Router();
 const multer = require('multer');
-
+const uploadSigned = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 const uploadPhotos= multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -219,11 +242,16 @@ router.get('/', isLoggedIn, async (req, res) => {
             q = '',
             status = '',
             assigned = '',
+            risk = '',
             sort = 'createdAt_desc'
         } = req.query;
 
         const filter = {};
+        let users = [];
 
+        if (req.session.user.role === 'admin') {
+            users = await User.find({}, 'username').sort({ username: 1 });
+        }
         if (q.trim()) {
             filter.$or = [
                 { shortName: { $regex: q.trim(), $options: 'i' } },
@@ -236,7 +264,11 @@ router.get('/', isLoggedIn, async (req, res) => {
         if (status) {
             filter.status = status;
         }
-
+        if (risk === 'yes') {
+            filter.isAtRisk = true;
+        } else if (risk === 'no') {
+            filter.isAtRisk = false;
+        }
         if (assigned === 'mine') {
             filter.assignedTo = req.session.user.id;
         } else if (assigned === 'free') {
@@ -288,10 +320,12 @@ router.get('/', isLoggedIn, async (req, res) => {
         res.render('addresses/index', {
             title: 'Lista adresów',
             addresses,
+            users,
             filters: {
                 q,
                 status,
                 assigned,
+                risk,
                 sort
             }
         });
@@ -301,7 +335,57 @@ router.get('/', isLoggedIn, async (req, res) => {
         res.redirect('/');
     }
 });
+router.post('/:id/risk', isLoggedIn, riskValidators, async (req, res) => {
+    try {
+        const address = await Address.findById(req.params.id);
 
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            req.flash('error', errors.array()[0].msg);
+            return res.redirect(`/addresses/${req.params.id}`);
+        }
+
+        address.isAtRisk = true;
+        address.riskReason = req.body.riskReason || '';
+
+        await address.save();
+
+        req.flash('success', 'Adres został oznaczony jako zagrożony');
+        res.redirect(`/addresses/${req.params.id}`);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się oznaczyć realizacji jako zagrożonej');
+        res.redirect('/addresses');
+    }
+});
+router.post('/:id/risk/clear', isLoggedIn, async (req, res) => {
+    try {
+        const address = await Address.findById(req.params.id);
+
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        address.isAtRisk = false;
+        address.riskReason = '';
+
+        await address.save();
+
+        req.flash('success', 'Usunięto oznaczenie zagrożonej realizacji');
+        res.redirect(`/addresses/${req.params.id}`);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się usunąć oznaczenia zagrożenia');
+        res.redirect('/addresses');
+    }
+});
 router.post('/:id/assign', isLoggedIn, async (req, res) => {
     try {
         const address = await Address.findById(req.params.id);
@@ -330,7 +414,42 @@ router.post('/:id/assign', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+router.post('/:id/assign-user', isLoggedIn, isAdmin, async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const address = await Address.findById(req.params.id);
+        const backUrl = req.get('referer') || `/addresses/${req.params.id}`;
 
+        if (!address) {
+            req.flash('error', 'Adres nie istnieje');
+            return res.redirect('/addresses');
+        }
+
+        if (!userId) {
+            req.flash('error', 'Nie wybrano użytkownika.');
+            return res.redirect(backUrl);
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            req.flash('error', 'Wybrany użytkownik nie istnieje.');
+            return res.redirect(backUrl);
+        }
+
+        address.assignedTo = user._id;
+        address.status = 'przypisany';
+
+        await address.save();
+
+        req.flash('success', `Adres przypisany do użytkownika ${user.username}`);
+        res.redirect(backUrl);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się przypisać adresu do użytkownika');
+        res.redirect('/addresses');
+    }
+});
 router.post('/:id/unassign', isLoggedIn, async (req, res) => {
     try {
         const address = await Address.findById(req.params.id);
@@ -367,7 +486,8 @@ router.post('/:id/unassign', isLoggedIn, async (req, res) => {
 router.get('/:id/supplement', isLoggedIn, async (req, res) => {
     try {
         const address = await Address.findById(req.params.id).populate('assignedTo');
-
+        const generatedObjectNumber =
+            address.supplement?.objectNumber || generateObjectNumber(address);
         if (!address) {
             req.flash('error', 'Nie znaleziono adresu');
             return res.redirect('/addresses');
@@ -388,8 +508,9 @@ router.get('/:id/supplement', isLoggedIn, async (req, res) => {
             roofCoveringOptions: ROOF_COVERING,
             connectionTypeOptions: CONNECTION_TYPE,
             gsmMountingOptions: GSM_MOUNTING,
+
             formData: {
-                objectNumber: address.supplement?.objectNumber || '',
+                objectNumber: generatedObjectNumber,
                 visionDate: address.supplement?.visionDate
                     ? new Date(address.supplement.visionDate).toISOString().split('T')[0]
                     : '',
@@ -462,7 +583,8 @@ router.post(
             }
 
             const errors = validationResult(req);
-
+            const objectNumber =
+                address.supplement?.objectNumber || generateObjectNumber(address);
             if (!errors.isEmpty()) {
                 return res.status(422).render('addresses/supplement-form', {
                     title: 'Suplement',
@@ -477,7 +599,7 @@ router.post(
                     gsmMountingOptions: GSM_MOUNTING,
 
                     formData: {
-                        objectNumber: req.body.objectNumber || '',
+                        objectNumber,
                         visionDate: req.body.visionDate || '',
                         lift: req.body.lift === 'on',
                         sirenLocation: req.body.sirenLocation || '',
@@ -576,9 +698,8 @@ router.post(
             };
 
             const buffer = generateSupplementDocx(address, photos);
-            const fs = require('fs');
-            fs.writeFileSync('test-output.docx', buffer);
-            console.log('DOCX size:', buffer.length);
+            address.status = 'wygenerowany';
+            await address.save();
             function sanitizeFileName(value) {
                 return String(value)
                     .normalize('NFD')
@@ -688,6 +809,11 @@ router.get('/:id/supplement/docx', isLoggedIn, async (req, res) => {
 
 router.get('/:id', isLoggedIn, async (req, res) => {
     try {
+        let users = [];
+
+        if (req.session.user.role === 'admin') {
+            users = await User.find({}, 'username').sort({ username: 1 });
+        }
         const address = await Address.findById(req.params.id)
             .populate('assignedTo')
             .populate('supplement.updatedBy');
@@ -706,6 +832,7 @@ router.get('/:id', isLoggedIn, async (req, res) => {
         res.render('addresses/show', {
             title: 'Szczegóły adresu',
             address,
+            users,
             hasSupplement: hasSupplementData(address.supplement),
             canUnassign,
             canEditSupplement
@@ -716,5 +843,76 @@ router.get('/:id', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+router.post(
+    '/:id/upload-signed',
+    isLoggedIn,
+    uploadSigned.single('signedFile'),
+    async (req, res) => {
+        try {
+            const address = await Address.findById(req.params.id);
 
+            if (!address) {
+                req.flash('error', 'Nie znaleziono adresu');
+                return res.redirect('/addresses');
+            }
+
+            if (!req.file) {
+                req.flash('error', 'Nie wybrano pliku');
+                return res.redirect(`/addresses/${address._id}`);
+            }
+
+            if (req.file.mimetype !== 'application/pdf') {
+                req.flash('error', 'Dozwolone tylko PDF');
+                return res.redirect(`/addresses/${address._id}`);
+            }
+
+            // 🔥 upload na NAS
+            await uploadSignedToSFTP(address, req.file);
+
+            // 🔥 zmiana statusu
+            address.status = 'zakonczony';
+            await address.save();
+
+            req.flash('success', 'Wgrano podpisany suplement');
+            res.redirect(`/addresses/${address._id}`);
+
+        } catch (err) {
+            console.error(err);
+            req.flash('error', 'Błąd uploadu PDF');
+            res.redirect('/addresses');
+        }
+    }
+);
+router.get('/:id/download-signed', isLoggedIn, async (req, res) => {
+    try {
+        const address = await Address.findById(req.params.id);
+
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        const buffer = await downloadSignedFromSFTP(address);
+
+        if (!buffer) {
+            req.flash('error', 'Brak pliku PDF');
+            return res.redirect(`/addresses/${address._id}`);
+        }
+
+        const fileName = `SIGNED_${address.shortName}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${fileName}"`
+        );
+
+        return res.send(buffer);
+
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Błąd pobierania PDF');
+        res.redirect('/addresses');
+    }
+});
 module.exports = router;

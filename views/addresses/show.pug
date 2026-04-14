@@ -53,15 +53,53 @@ block content
                 span.detail-label Przypisany
                 span.detail-value= address.assignedTo ? address.assignedTo.username : 'brak'
 
+            .detail-item
+                span.detail-label Realizacja zagrożona
+                span.detail-value= address.isAtRisk ? 'TAK' : 'NIE'
+            if address.isAtRisk && address.riskReason
+                .detail-item
+                    span.detail-label Opis problemu
+                    span.detail-value= address.riskReason
+
         if !address.assignedTo
             .actions
-                form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
-                    button(type="submit") Przypisz do mnie
+                if currentUser.role === 'admin'
+                    form.inline-form(action=`/addresses/${address._id}/assign-user` method="POST")
+                        select(name="userId" required)
+                            option(value="") Wybierz użytkownika
+                            each user in users
+                                option(value=user._id)= user.username
+                        button(type="submit") Przypisz
+                else
+                    form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
+                        button(type="submit") Przypisz do mnie
         else if canUnassign
             .actions
                 form.inline-form(action=`/addresses/${address._id}/unassign` method="POST" onsubmit="return confirm('Na pewno cofnąć przypisanie?')")
                     button.button-danger(type="submit") Cofnij przypisanie
 
+        if !address.isAtRisk
+            .card(style="margin-top: 20px;")
+                h3 Realizacja zagrożona
+
+                form(action=`/addresses/${address._id}/risk` method="POST")
+                    .form-group
+                        label(for="riskReason") Opis problemu
+                        textarea#riskReason(name="riskReason" rows="4" required)
+
+                    .actions
+                        button.button-danger(type="submit") Oznacz jako zagrożoną
+        else
+            .card(style="margin-top: 20px;")
+                h3 Realizacja zagrożona
+
+                p
+                    strong Opis problemu:
+                    |  #{address.riskReason}
+
+                .actions
+                    form.inline-form(action=`/addresses/${address._id}/risk/clear` method="POST" onsubmit="return confirm('Usunąć oznaczenie zagrożenia?')")
+                        button.button-secondary(type="submit") Usuń oznaczenie zagrożenia
     .card(style="margin-top: 20px;")
         h3 Suplement
 
@@ -221,7 +259,6 @@ block content
             if canEditSupplement
                 .actions
                     a.button(href=`/addresses/${address._id}/supplement`) Edytuj suplement
-                    a.button.button-secondary(href=`/addresses/${address._id}/supplement/docx`) Pobierz DOCX
                     form.inline-form(action=`/addresses/${address._id}/supplement/delete` method="POST" onsubmit="return confirm('Na pewno usunąć suplement?')")
                         button.button-danger(type="submit") Usuń suplement
         else
@@ -230,6 +267,25 @@ block content
                 .actions
                     a.button(href=`/addresses/${address._id}/supplement`) Dodaj suplement
 
+    .card(style="margin-top:20px;")
+
+        h3 Podpisany suplement
+        if address.status === 'wygenerowany'
+            form(
+                action=`/addresses/${address._id}/upload-signed`
+                method="POST"
+                enctype="multipart/form-data"
+            )
+                .form-group
+                    label(for="signedFile") Wgraj podpisany PDF
+                    input#signedFile(type="file" name="signedFile" accept="application/pdf" required)
+
+                .actions
+                    button(type="submit") Wgraj i zakończ
+        if address.status === 'zakonczony'
+            .actions
+                a.button(href=`/addresses/${address._id}/download-signed`)
+                    Pobierz Pobierz podpisany PDF
     .card(style="margin-top: 20px;")
         .actions
             a.button.button-secondary(href="/addresses") Powrót do listy

@@ -6,6 +6,10 @@ block content
 
     .actions
       a.button(
+        href="/addresses?risk=yes"
+        class=filters.risk === 'yes' && !filters.status && !filters.assigned && !filters.q ? '' : 'button-secondary'
+      ) Zagrożone
+      a.button(
         href="/addresses?status=nowy"
         class=filters.status === 'nowy' && !filters.assigned && !filters.q ? '' : 'button-secondary'
       ) Nowe
@@ -19,6 +23,11 @@ block content
         href="/addresses?status=przypisany"
         class=filters.status === 'przypisany' && !filters.assigned && !filters.q ? '' : 'button-secondary'
       ) Przypisane
+
+      a.button(
+        href="/addresses?status=wygenerowany"
+        class=filters.status === 'wygenerowany' && !filters.assigned && !filters.q ? '' : 'button-secondary'
+      ) Wygenerowany
 
       a.button(
         href="/addresses?status=zakonczony"
@@ -47,6 +56,7 @@ block content
               option(value="") Wszystkie
               option(value="nowy" selected=filters.status === 'nowy') Nowe
               option(value="przypisany" selected=filters.status === 'przypisany') Przypisane
+              option(value="wygenerowany" selected=filters.status === 'wygenerowany') Wygenerowane
               option(value="zakonczony" selected=filters.status === 'zakonczony') Zakończone
 
           .form-group
@@ -56,6 +66,12 @@ block content
               option(value="free" selected=filters.assigned === 'free') Nieprzypisane
               option(value="assigned" selected=filters.assigned === 'assigned') Przypisane do kogokolwiek
               option(value="mine" selected=filters.assigned === 'mine') Tylko moje
+          .form-group
+            label(for="risk") Zagrożenie realizacji
+            select#risk(name="risk")
+              option(value="" selected=filters.risk === '') Wszystkie
+              option(value="yes" selected=filters.risk === 'yes') Tylko zagrożone
+              option(value="no" selected=filters.risk === 'no') Tylko niezagrożone
 
           .form-group
             label(for="sort") Sortowanie
@@ -91,7 +107,7 @@ block content
               th Przypisany
           tbody
             each address in addresses
-              tr
+              tr(class=address.isAtRisk ? 'row-risk' : '')
                 td
                   a(href=`/addresses/${address._id}`)= address.shortName
                 td= address.title
@@ -104,5 +120,13 @@ block content
                   if address.assignedTo
                     = address.assignedTo.username
                   else
-                    form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
-                      button(type="submit") Przypisz do mnie
+                    if currentUser.role === 'admin'
+                      form.inline-form(action=`/addresses/${address._id}/assign-user` method="POST")
+                        select(name="userId" required)
+                          option(value="") Wybierz użytkownika
+                          each user in users
+                            option(value=user._id)= user.username
+                        button(type="submit") Przypisz
+                    else
+                      form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
+                        button(type="submit") Przypisz do mnie

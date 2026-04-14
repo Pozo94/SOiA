@@ -223,7 +223,7 @@ const addressSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['nowy', 'przypisany', 'zakonczony'],
+            enum: ['nowy', 'przypisany','wygenerowany', 'zakonczony'],
             default: 'nowy'
         },
         assignedTo: {
@@ -234,6 +234,15 @@ const addressSchema = new mongoose.Schema(
         notes: {
             type: String,
             default: ''
+        },
+        isAtRisk: {
+            type: Boolean,
+            default: false
+        },
+        riskReason: {
+            type: String,
+            default: '',
+            trim: true
         },
         supplement: {
             type: supplementSchema,

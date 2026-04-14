@@ -48,7 +48,83 @@ async function uploadPhotosToSFTP(address, files) {
         sftp.end();
     }
 }
+async function uploadSignedToSFTP(address, file) {
+    const Client = require('ssh2-sftp-client');
+    const sftp = new Client();
+
+    const basePath = '/Dzial_Techniczny/SOIA/Aplikacja SOIA';
+
+    const folderName = sanitize(
+        `${address.shortName}_${address.city}`
+    );
+
+    const remoteDir = `${basePath}/${folderName}`;
+
+    try {
+        await sftp.connect({
+            host: process.env.SFTP_HOST,
+            port: 22,
+            username: process.env.SFTP_USER,
+            password: process.env.SFTP_PASS
+        });
+
+        await sftp.mkdir(remoteDir, true);
+
+        const filename = `SIGNED_${address.shortName}.pdf`;
+
+        const remotePath = `${remoteDir}/${filename}`;
+
+        await sftp.put(file.buffer, remotePath);
+
+        console.log('Uploaded signed PDF:', remotePath);
+
+    } catch (err) {
+        console.error('SFTP PDF ERROR:', err);
+        throw err;
+    } finally {
+        sftp.end();
+    }
+}
+async function downloadSignedFromSFTP(address) {
+    const Client = require('ssh2-sftp-client');
+    const sftp = new Client();
+
+    const basePath = '/Dzial_Techniczny/SOIA/Aplikacja SOIA';
+
+    const folderName = sanitize(
+        `${address.shortName}_${address.city}`
+    );
+
+    const remotePath = `${basePath}/${folderName}/SIGNED_${address.shortName}.pdf`;
+
+    try {
+        await sftp.connect({
+            host: process.env.SFTP_HOST,
+            port: 22,
+            username: process.env.SFTP_USER,
+            password: process.env.SFTP_PASS
+        });
+
+        const exists = await sftp.exists(remotePath);
+
+        if (!exists) {
+            return null;
+        }
+
+        const buffer = await sftp.get(remotePath);
+
+        return buffer;
+
+    } catch (err) {
+        console.error('SFTP DOWNLOAD ERROR:', err);
+        throw err;
+    } finally {
+        sftp.end();
+    }
+}
 
 module.exports = {
-    uploadPhotosToSFTP
+    uploadPhotosToSFTP,
+    uploadSignedToSFTP,
+    downloadSignedFromSFTP
 };

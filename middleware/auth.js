@@ -14,8 +14,16 @@ function canEditAssignedAddress(address, sessionUser) {
     if (!address.assignedTo) return false;
     return String(address.assignedTo.id) === String(sessionUser.id);
 }
+function isAdmin(req, res, next) {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        req.flash('error', 'Brak uprawnień.');
+        return res.redirect('/addresses');
+    }
 
+    next();
+}
 module.exports = {
     isLoggedIn,
-    canEditAssignedAddress
+    canEditAssignedAddress,
+    isAdmin
 };

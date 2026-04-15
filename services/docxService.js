@@ -126,13 +126,31 @@ function generateSupplementDocx(address, photos = {}) {
             ? `${textValue(supplement.contact.firstname)} ${textValue(supplement.contact.lastname)} ${textValue(supplement.contact.phone)}`.trim()
             : '',
 
-        photo1: photos.photo1 || null,
-        photo2: photos.photo2 || null,
-        photo3: photos.photo3 || null,
-        photo4: photos.photo4 || null,
-        photo5: photos.photo5 || null,
-        photo6: photos.photo6 || null,
-        photo7: photos.photo7 || null
+        photo1_1: photos.photo1_1 || null,
+        photo1_2: photos.photo1_2 || null,
+        photo1_3: photos.photo1_3 || null,
+
+        photo2_1: photos.photo2_1 || null,
+        photo2_2: photos.photo2_2 || null,
+        photo2_3: photos.photo2_3 || null,
+
+        photo3_1: photos.photo3_1 || null,
+        photo3_2: photos.photo3_2 || null,
+        photo3_3: photos.photo3_3 || null,
+
+        photo4_1: photos.photo4_1 || null,
+        photo4_2: photos.photo4_2 || null,
+        photo4_3: photos.photo4_3 || null,
+
+        photo5_1: photos.photo5_1 || null,
+        photo5_2: photos.photo5_2 || null,
+        photo5_3: photos.photo5_3 || null,
+
+        photo6_1: photos.photo6_1 || null,
+        photo6_2: photos.photo6_2 || null,
+        photo6_3: photos.photo6_3 || null,
+
+        photo7: photos.photo7 || null,
     });
 
     return doc.getZip().generate({

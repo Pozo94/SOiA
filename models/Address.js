@@ -163,7 +163,14 @@ const supplementSchema = new mongoose.Schema(
           type:contactSchema,
           default:undefined
         },
-
+        supplementDocxPath: {
+            type: String,
+            default: ''
+        },
+        supplementDocxName: {
+            type: String,
+            default: ''
+        },
         updatedAt: {
             type: Date,
             default: null

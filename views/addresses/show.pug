@@ -261,7 +261,7 @@ block content
                     a.button(href=`/addresses/${address._id}/supplement`) Edytuj suplement
                     form.inline-form(action=`/addresses/${address._id}/supplement/delete` method="POST" onsubmit="return confirm('Na pewno usunąć suplement?')")
                         button.button-danger(type="submit") Usuń suplement
-                    a.button(href=`/addresses/${address._id}/supplement/docx`) Pobierz DOCX
+                    a.button.button-secondary(href=`/addresses/${address._id}/supplement/docx-from-nas`) Pobierz DOCX z NAS
         else
             p Brak danych suplementu.
             if canEditSupplement

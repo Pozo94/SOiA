@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { uploadPhotosToSFTP,uploadSignedToSFTP,downloadSignedFromSFTP } = require('../services/sftpService');
+const { uploadPhotosToSFTP,uploadSignedToSFTP,downloadSignedFromSFTP,uploadSupplementDocxToSFTP,downloadSupplementDocxFromSFTP } = require('../services/sftpService');
 const Address = require('../models/Address');
 const User = require('../models/User');
 const { isLoggedIn, canEditAssignedAddress,isAdmin } = require('../middleware/auth');
@@ -415,7 +415,10 @@ router.post('/:id/assign', isLoggedIn, async (req, res) => {
         }
 
         address.assignedTo = req.session.user.id;
-        address.status = 'przypisany';
+        if(address.status==='nowy'){
+
+            address.status = 'przypisany';
+        }
 
         await address.save();
 
@@ -571,13 +574,32 @@ router.post(
     '/:id/supplement',
     isLoggedIn,
     uploadPhotos.fields([
-        { name: 'photo1', maxCount: 1 },
-        { name: 'photo2', maxCount: 1 },
-        { name: 'photo3', maxCount: 1 },
-        { name: 'photo4', maxCount: 1 },
-        { name: 'photo5', maxCount: 1 },
-        { name: 'photo6', maxCount: 1 },
-        { name: 'photo7', maxCount: 1 }
+        { name: 'photo1_1', maxCount: 1 },
+        { name: 'photo1_2', maxCount: 1 },
+        { name: 'photo1_3', maxCount: 1 },
+
+        { name: 'photo2_1', maxCount: 1 },
+        { name: 'photo2_2', maxCount: 1 },
+        { name: 'photo2_3', maxCount: 1 },
+
+        { name: 'photo3_1', maxCount: 1 },
+        { name: 'photo3_2', maxCount: 1 },
+        { name: 'photo3_3', maxCount: 1 },
+
+        { name: 'photo4_1', maxCount: 1 },
+        { name: 'photo4_2', maxCount: 1 },
+        { name: 'photo4_3', maxCount: 1 },
+
+        { name: 'photo5_1', maxCount: 1 },
+        { name: 'photo5_2', maxCount: 1 },
+        { name: 'photo5_3', maxCount: 1 },
+
+        { name: 'photo6_1', maxCount: 1 },
+        { name: 'photo6_2', maxCount: 1 },
+        { name: 'photo6_3', maxCount: 1 },
+
+        { name: 'photo7', maxCount: 1 },
+
     ]),
     supplementValidators,
     async (req, res) => {
@@ -682,6 +704,7 @@ router.post(
                 lightningProtectionLength: lightningProtection ? null : (req.body.lightningProtectionLength || null),
                 groundType: req.body.groundType || '',
                 passageMethod: req.body.passageMethod || '',
+                passageMethodCustom: req.body.passageMethod === 'inne' ? (req.body.passageMethodCustom || '') : '',
                 roofCovering: req.body.roofCovering || '',
                 lan,
                 lanLength: lan ? (req.body.lanLength || null) : null,
@@ -703,16 +726,38 @@ router.post(
             await address.save();
 
             const photos = {
-                photo1: req.files?.photo1?.[0]?.buffer || null,
-                photo2: req.files?.photo2?.[0]?.buffer || null,
-                photo3: req.files?.photo3?.[0]?.buffer || null,
-                photo4: req.files?.photo4?.[0]?.buffer || null,
-                photo5: req.files?.photo5?.[0]?.buffer || null,
-                photo6: req.files?.photo6?.[0]?.buffer || null,
-                photo7: req.files?.photo7?.[0]?.buffer || null,
+                photo1_1: req.files?.photo1_1?.[0]?.buffer || null,
+                photo1_2: req.files?.photo1_2?.[0]?.buffer || null,
+                photo1_3: req.files?.photo1_3?.[0]?.buffer || null,
+
+                photo2_1: req.files?.photo2_1?.[0]?.buffer || null,
+                photo2_2: req.files?.photo2_2?.[0]?.buffer || null,
+                photo2_3: req.files?.photo2_3?.[0]?.buffer || null,
+
+                photo3_1: req.files?.photo3_1?.[0]?.buffer || null,
+                photo3_2: req.files?.photo3_2?.[0]?.buffer || null,
+                photo3_3: req.files?.photo3_3?.[0]?.buffer || null,
+
+                photo4_1: req.files?.photo4_1?.[0]?.buffer || null,
+                photo4_2: req.files?.photo4_2?.[0]?.buffer || null,
+                photo4_3: req.files?.photo4_3?.[0]?.buffer || null,
+
+                photo5_1: req.files?.photo5_1?.[0]?.buffer || null,
+                photo5_2: req.files?.photo5_2?.[0]?.buffer || null,
+                photo5_3: req.files?.photo5_3?.[0]?.buffer || null,
+
+                photo6_1: req.files?.photo6_1?.[0]?.buffer || null,
+                photo6_2: req.files?.photo6_2?.[0]?.buffer || null,
+                photo6_3: req.files?.photo6_3?.[0]?.buffer || null,
+
+                photo7: req.files?.photo7?.[0]?.buffer || null
             };
 
             const buffer = generateSupplementDocx(address, photos);
+            const uploadedDocx = await uploadSupplementDocxToSFTP(address, buffer);
+
+            address.supplement.supplementDocxPath = uploadedDocx.remotePath;
+            address.supplement.supplementDocxName = uploadedDocx.fileName;
             address.status = 'wygenerowany';
             await address.save();
             function sanitizeFileName(value) {
@@ -724,8 +769,7 @@ router.post(
                     .replace(/^-|-$/g, '');
             }
 
-            const shortNamePart = sanitizeFileName(address.shortName || 'obiekt');
-            const safeFileName = `SOIA_2026_UMK_${shortNamePart}.docx`;
+
 
             res.setHeader(
                 'Content-Type',
@@ -733,10 +777,11 @@ router.post(
             );
             res.setHeader(
                 'Content-Disposition',
-                `attachment; filename="${safeFileName}"`
+                `attachment; filename="${uploadedDocx.fileName}"`
             );
 
-            return res.send(buffer);
+            req.flash('success', 'Suplement zapisany i wygenerowany');
+            return res.redirect(`/addresses/${address._id}`);
         } catch (error) {
             console.error(error);
             req.flash('error', 'Nie udało się zapisać suplementu i wygenerować Worda.');
@@ -760,7 +805,11 @@ router.post('/:id/supplement/delete', isLoggedIn, async (req, res) => {
         }
 
         address.supplement = undefined;
-
+        if (address.assignedTo!=null){
+            address.status='przypisany';
+        }else{
+            address.status='nowy';
+        }
         await address.save();
 
         req.flash('success', 'Suplement został usunięty');
@@ -821,7 +870,50 @@ router.get('/:id/supplement/docx', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+router.get('/:id/supplement/docx-from-nas', isLoggedIn, async (req, res) => {
+    try {
+        const address = await Address.findById(req.params.id);
 
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu');
+            return res.redirect('/addresses');
+        }
+
+        if (!canEditAssignedAddress(address, req.session.user)) {
+            req.flash('error', 'Nie masz uprawnień do pobrania suplementu dla tego adresu.');
+            return res.redirect(`/addresses/${req.params.id}`);
+        }
+
+        const buffer = await downloadSupplementDocxFromSFTP(
+            address,
+            address.supplement?.supplementDocxPath || ''
+        );
+
+        if (!buffer) {
+            req.flash('error', 'Nie znaleziono pliku DOCX na NAS.');
+            return res.redirect(`/addresses/${address._id}`);
+        }
+
+        const fileName =
+            address.supplement?.supplementDocxName ||
+            `SOIA_2026_UMK_${address.shortName}.docx`;
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${fileName}"`
+        );
+
+        return res.send(buffer);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się pobrać pliku DOCX z NAS.');
+        return res.redirect('/addresses');
+    }
+});
 router.get('/:id', isLoggedIn, async (req, res) => {
     try {
         let users = [];

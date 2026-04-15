@@ -277,7 +277,40 @@ textarea {
   background: #ff505e
 }
 
+.photo-block {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
 
+.photo-block:last-child {
+  margin-bottom: 0;
+}
+
+.photo-block h4 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 14px;
+}
+
+.photo-grid .form-group {
+  margin-bottom: 0;
+}
+
+.photo-grid .form-group > label {
+  min-height: auto;
+  display: block;
+  font-weight: 600;
+}
 
 @media (max-width: 700px) {
   .site-header .container {

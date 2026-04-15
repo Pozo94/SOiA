@@ -213,30 +213,84 @@ block content
             .form-section
                 h3 Dokumentacja fotograficzna
 
-                .details-grid
-                    .form-group
-                        label(for="photo1") Zdjęcie lokalizacji syreny
-                        input#photo1(type="file" name="photo1" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie lokalizacji syreny
+                    .photo-grid
+                        .form-group
+                            label(for="photo1_1") Zdjęcie 1
+                            input#photo1_1(type="file" name="photo1_1" accept="image/*")
+                        .form-group
+                            label(for="photo1_2") Zdjęcie 2
+                            input#photo1_2(type="file" name="photo1_2" accept="image/*")
+                        .form-group
+                            label(for="photo1_3") Zdjęcie 3
+                            input#photo1_3(type="file" name="photo1_3" accept="image/*")
 
-                    .form-group
-                        label(for="photo2") Zdjęcie planowanej trasy kabla zasilającego
-                        input#photo2(type="file" name="photo2" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie planowanej trasy kabla zasilającego
+                    .photo-grid
+                        .form-group
+                            label(for="photo2_1") Zdjęcie 1
+                            input#photo2_1(type="file" name="photo2_1" accept="image/*")
+                        .form-group
+                            label(for="photo2_2") Zdjęcie 2
+                            input#photo2_2(type="file" name="photo2_2" accept="image/*")
+                        .form-group
+                            label(for="photo2_3") Zdjęcie 3
+                            input#photo2_3(type="file" name="photo2_3" accept="image/*")
 
-                    .form-group
-                        label(for="photo3") Zdjęcie punktu przyłączenia
-                        input#photo3(type="file" name="photo3" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie punktu przyłączenia
+                    .photo-grid
+                        .form-group
+                            label(for="photo3_1") Zdjęcie 1
+                            input#photo3_1(type="file" name="photo3_1" accept="image/*")
+                        .form-group
+                            label(for="photo3_2") Zdjęcie 2
+                            input#photo3_2(type="file" name="photo3_2" accept="image/*")
+                        .form-group
+                            label(for="photo3_3") Zdjęcie 3
+                            input#photo3_3(type="file" name="photo3_3" accept="image/*")
 
-                    .form-group
-                        label(for="photo4") Zdjęcie planowanej trasy kabla sterującego
-                        input#photo4(type="file" name="photo4" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie planowanej trasy kabla sterującego
+                    .photo-grid
+                        .form-group
+                            label(for="photo4_1") Zdjęcie 1
+                            input#photo4_1(type="file" name="photo4_1" accept="image/*")
+                        .form-group
+                            label(for="photo4_2") Zdjęcie 2
+                            input#photo4_2(type="file" name="photo4_2" accept="image/*")
+                        .form-group
+                            label(for="photo4_3") Zdjęcie 3
+                            input#photo4_3(type="file" name="photo4_3" accept="image/*")
 
-                    .form-group
-                        label(for="photo5") Zdjęcie wpięcia do sieci
-                        input#photo5(type="file" name="photo5" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie wpięcia do sieci
+                    .photo-grid
+                        .form-group
+                            label(for="photo5_1") Zdjęcie 1
+                            input#photo5_1(type="file" name="photo5_1" accept="image/*")
+                        .form-group
+                            label(for="photo5_2") Zdjęcie 2
+                            input#photo5_2(type="file" name="photo5_2" accept="image/*")
+                        .form-group
+                            label(for="photo5_3") Zdjęcie 3
+                            input#photo5_3(type="file" name="photo5_3" accept="image/*")
 
-                    .form-group
-                        label(for="photo6") Zdjęcie planowanej lokalizacji masztu
-                        input#photo6(type="file" name="photo6" accept="image/*")
+                .photo-block
+                    h4 Zdjęcie planowanej lokalizacji masztu
+                    .photo-grid
+                        .form-group
+                            label(for="photo6_1") Zdjęcie 1
+                            input#photo6_1(type="file" name="photo6_1" accept="image/*")
+                        .form-group
+                            label(for="photo6_2") Zdjęcie 2
+                            input#photo6_2(type="file" name="photo6_2" accept="image/*")
+                        .form-group
+                            label(for="photo6_3") Zdjęcie 3
+                            input#photo6_3(type="file" name="photo6_3" accept="image/*")
+
 
             .form-section
                 h3 Rzut budynku
@@ -269,7 +323,7 @@ block content
                     textarea#comments(name="comments" rows="5")= formData.comments
 
             .actions
-                button(type="submit" onclick="console.log('click')") Zapisz i pobierz DOCX
+                button(type="submit") Zapisz suplement
                 a.button.button-secondary(href=`/addresses/${address._id}`) Anuluj
 
         script.

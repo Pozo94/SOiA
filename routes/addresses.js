@@ -194,6 +194,12 @@ const supplementValidators = [
         .isIn(PASSAGE_METHOD)
         .withMessage('Wybierz poprawny sposób wykonania przejścia kablowego.'),
 
+    body('passageMethodCustom')
+        .if((value, { req }) => req.body.passageMethod === 'inne')
+        .trim()
+        .notEmpty()
+        .withMessage('Podaj własny sposób wykonania przejścia kablowego.'),
+
     body('roofCovering')
         .trim()
         .isIn(ROOF_COVERING)
@@ -540,6 +546,7 @@ router.get('/:id/supplement', isLoggedIn, async (req, res) => {
                 lightningProtectionLength: address.supplement?.lightningProtectionLength ?? '',
                 groundType: address.supplement?.groundType || '',
                 passageMethod: address.supplement?.passageMethod || '',
+                passageMethodCustom: address.supplement?.passageMethodCustom || '',
                 roofCovering: address.supplement?.roofCovering || '',
                 lan: address.supplement?.lan || false,
                 lanLength: address.supplement?.lanLength ?? '',
@@ -627,6 +634,7 @@ router.post(
                         lightningProtectionLength: req.body.lightningProtectionLength || '',
                         groundType: req.body.groundType || '',
                         passageMethod: req.body.passageMethod || '',
+                        passageMethodCustom: req.body.passageMethodCustom || '',
                         roofCovering: req.body.roofCovering || '',
                         lan: req.body.lan === 'on',
                         lanLength: req.body.lanLength || '',

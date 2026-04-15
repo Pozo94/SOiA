@@ -107,7 +107,11 @@ function generateSupplementDocx(address, photos = {}) {
             ? ''
             : numberValue(supplement.lightningProtectionLength),
         groundType: textValue(supplement.groundType),
-        passageMethod: textValue(supplement.passageMethod),
+        passageMethod:
+            supplement.passageMethod === 'inne'
+                ? textValue(supplement.passageMethodCustom)
+                : textValue(supplement.passageMethod),
+
         roofCovering: textValue(supplement.roofCovering),
         lan: boolText(lan),
         lanLength: lan ? numberValue(supplement.lanLength) : '',

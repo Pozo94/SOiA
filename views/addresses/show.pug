@@ -209,7 +209,7 @@ block content
                 if address.supplement.passageMethod
                     .detail-item
                         span.detail-label Sposób wykonania przejścia kablowego
-                        span.detail-value= address.supplement.passageMethod
+                        span.detail-value= address.supplement.passageMethod === 'inne' ? address.supplement.passageMethodCustom : address.supplement.passageMethod
 
                 if address.supplement.roofCovering
                     .detail-item
@@ -261,6 +261,7 @@ block content
                     a.button(href=`/addresses/${address._id}/supplement`) Edytuj suplement
                     form.inline-form(action=`/addresses/${address._id}/supplement/delete` method="POST" onsubmit="return confirm('Na pewno usunąć suplement?')")
                         button.button-danger(type="submit") Usuń suplement
+                    a.button(href=`/addresses/${address._id}/supplement/docx`) Pobierz DOCX
         else
             p Brak danych suplementu.
             if canEditSupplement

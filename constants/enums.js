@@ -25,6 +25,7 @@ export const PASSAGE_METHOD = [
     "wykorzystanie istniejącego przepustu dachowego",
     "wykonanie nowego przepustu",
     "wiercenie przez strop/dach",
+    "inne",
     ""
 ];
 export const ROOF_COVERING = [

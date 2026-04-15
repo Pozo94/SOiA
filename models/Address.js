@@ -126,6 +126,11 @@ const supplementSchema = new mongoose.Schema(
             default: '',
             trim: true
         },
+        passageMethodCustom: {
+            type: String,
+            default: '',
+            trim: true
+        },
         roofCovering: {
             type: String,
             enum:ROOF_COVERING,

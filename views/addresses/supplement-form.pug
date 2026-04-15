@@ -171,6 +171,15 @@ block content
                             each option in passageMethodOptions
                                 option(value=option selected=formData.passageMethod === option)= option
 
+
+                    .form-group#passageMethodCustomGroup
+                        label(for="passageMethodCustom") Własny sposób wykonania przejścia kablowego
+                        input#passageMethodCustom(
+                            type="text"
+                            name="passageMethodCustom"
+                            value=formData.passageMethodCustom
+                        )
+
                     .form-group
                         label(for="roofCovering") Rodzaj poszycia dachu
                         select#roofCovering(name="roofCovering" required)
@@ -284,6 +293,15 @@ block content
                 const lanWallsGroup = document.getElementById('lanWallsGroup');
                 const lanWalls = document.getElementById('lanWalls');
 
+                const passageMethod = document.getElementById('passageMethod');
+                const passageMethodCustomGroup = document.getElementById('passageMethodCustomGroup');
+                const passageMethodCustom = document.getElementById('passageMethodCustom');
+
+                function updatePassageMethodSection() {
+                    const showCustom = passageMethod && passageMethod.value === 'inne';
+                    toggleGroup(passageMethodCustomGroup, passageMethodCustom, showCustom);
+                }
+
                 function toggleGroup(group, field, show) {
                     if (!group || !field) return;
 
@@ -316,10 +334,13 @@ block content
                     toggleGroup(lanWallsGroup, lanWalls, showLanFields);
                 }
 
+                if (passageMethod) passageMethod.addEventListener('change', updatePassageMethodSection);
+
                 powerBool.addEventListener('change', updatePowerSection);
                 lightningProtection.addEventListener('change', updateLightningSection);
                 lan.addEventListener('change', updateLanSection);
 
+                updatePassageMethodSection(),
                 updatePowerSection();
                 updateLightningSection();
                 updateLanSection();

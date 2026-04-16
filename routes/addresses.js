@@ -37,7 +37,7 @@ const router = express.Router();
 const multer = require('multer');
 const uploadSigned = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+    limits: { fileSize: 30 * 1024 * 1024 } // 30MB
 });
 const uploadPhotos= multer({
     storage: multer.memoryStorage(),

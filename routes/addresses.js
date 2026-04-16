@@ -879,10 +879,6 @@ router.get('/:id/supplement/docx-from-nas', isLoggedIn, async (req, res) => {
             return res.redirect('/addresses');
         }
 
-        if (!canEditAssignedAddress(address, req.session.user)) {
-            req.flash('error', 'Nie masz uprawnień do pobrania suplementu dla tego adresu.');
-            return res.redirect(`/addresses/${req.params.id}`);
-        }
 
         const buffer = await downloadSupplementDocxFromSFTP(
             address,

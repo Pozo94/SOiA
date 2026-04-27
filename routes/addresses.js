@@ -949,7 +949,15 @@ router.get('/:id', isLoggedIn, async (req, res) => {
 router.post(
     '/:id/upload-signed',
     isLoggedIn,
-    uploadSigned.single('signedFile'),
+    (req, res, next) => {
+        uploadSigned.single('signedFile')(req, res, (err) => {
+            if (err) {
+                req.flash('error', 'Plik PDF jest za duży albo ma niepoprawny format.');
+                return res.redirect(`/addresses/${req.params.id}`);
+            }
+            next();
+        });
+    },
     async (req, res) => {
         try {
             const address = await Address.findById(req.params.id);

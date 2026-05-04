@@ -1026,4 +1026,31 @@ router.get('/:id/download-signed', isLoggedIn, async (req, res) => {
         res.redirect('/addresses');
     }
 });
+router.post('/:id/inspection-date', isLoggedIn, isAdmin, async (req, res) => {
+    try {
+        const address = await Address.findById(req.params.id);
+
+        if (!address) {
+            req.flash('error', 'Nie znaleziono adresu.');
+            return res.redirect('/addresses');
+        }
+
+        if (!req.body.inspectionDate) {
+            req.flash('error', 'Podaj datę i godzinę wizji.');
+            return res.redirect(`/addresses/${address._id}`);
+        }
+
+        address.inspectionDate = new Date(req.body.inspectionDate);
+
+
+        await address.save();
+
+        req.flash('success', 'Zapisano termin wizji lokalnej.');
+        return res.redirect(`/addresses/${address._id}`);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się zapisać terminu wizji.');
+        return res.redirect('/addresses');
+    }
+});
 module.exports = router;

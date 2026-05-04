@@ -52,6 +52,10 @@ block content
             .detail-item
                 span.detail-label Przypisany
                 span.detail-value= address.assignedTo ? address.assignedTo.username : 'brak'
+            .detail-item
+                span.detail-label Termin wizji lokalnej
+                span.detail-value= address.inspectionDate ? new Date(address.inspectionDate).toLocaleString('pl-PL') : 'brak'
+
 
             .detail-item
                 span.detail-label Realizacja zagrożona
@@ -100,6 +104,27 @@ block content
                 .actions
                     form.inline-form(action=`/addresses/${address._id}/risk/clear` method="POST" onsubmit="return confirm('Usunąć oznaczenie zagrożenia?')")
                         button.button-secondary(type="submit") Usuń oznaczenie zagrożenia
+
+    if currentUser && currentUser.role === 'admin'
+        .card(style="margin-top: 20px;")
+            h3 Termin wizji lokalnej
+
+            form(action=`/addresses/${address._id}/inspection-date` method="POST")
+                .details-grid
+                    .form-group
+                        label(for="inspectionDate") Data i godzina wizji
+                        input#inspectionDate(
+                            type="datetime-local"
+                            name="inspectionDate"
+                            value=address.inspectionDate ? new Date(address.inspectionDate).toISOString().slice(0, 16) : ''
+                        required
+                        )
+
+
+
+                .actions
+                    button(type="submit") Zapisz termin
+
     .card(style="margin-top: 20px;")
         h3 Suplement
 

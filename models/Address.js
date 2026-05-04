@@ -240,6 +240,10 @@ const addressSchema = new mongoose.Schema(
             ref: 'User',
             default: null
         },
+        inspectionDate: {
+            type: Date,
+            default: null
+        },
         notes: {
             type: String,
             default: ''

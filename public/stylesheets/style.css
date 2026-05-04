@@ -47,7 +47,26 @@ th, td {
   width: min(1180px, 94%);
   margin: 0 auto;
 }
+.logo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
 
+.logo a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo img {
+  height: clamp(32px, 5vw, 52px);
+  width: auto;
+  max-width: min(220px, 60vw);
+  display: block;
+  object-fit: contain;
+}
 .site-header {
   background: linear-gradient(135deg, #1e293b, #0f172a);
   color: white;

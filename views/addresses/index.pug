@@ -101,6 +101,7 @@ block content
               th Miasto
               th Status
               th Przypisany
+              th Termin wizji
           tbody
             each address in addresses
               tr(class=address.isAtRisk ? 'row-risk' : '')
@@ -126,3 +127,8 @@ block content
                     else
                       form.inline-form(action=`/addresses/${address._id}/assign` method="POST")
                         button(type="submit") Przypisz do mnie
+                td
+                  if address.inspectionDate
+                    = new Date(address.inspectionDate).toLocaleString('pl-PL')
+                  else
+                    | -

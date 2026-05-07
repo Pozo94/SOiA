@@ -70,6 +70,8 @@ block content
           .form-group
             label(for="sort") Sortowanie
             select#sort(name="sort")
+              option(value="inspectionDate_asc" selected=filters.sort === 'inspectionDate_asc') Data wizji rosnąco
+              option(value="inspectionDate_desc" selected=filters.sort === 'inspectionDate_desc') Data wizji malejąco
               option(value="category_asc" selected=filters.sort === 'category_asc') Kategoria A-Z
               option(value="category_desc" selected=filters.sort === 'category_desc') Kategoria Z-A
               option(value="createdAt_desc" selected=filters.sort === 'createdAt_desc') Najnowsze

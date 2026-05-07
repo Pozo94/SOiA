@@ -284,7 +284,7 @@ router.get('/', isLoggedIn, async (req, res) => {
             filter.assignedTo = { $ne: null };
         }
 
-        let sortOption = { createdAt: -1 };
+        let sortOption = { category: 1 };
 
         switch (sort) {
             case 'shortName_asc':
@@ -293,34 +293,49 @@ router.get('/', isLoggedIn, async (req, res) => {
             case 'shortName_desc':
                 sortOption = { shortName: -1 };
                 break;
+
             case 'title_asc':
                 sortOption = { title: 1 };
                 break;
             case 'title_desc':
                 sortOption = { title: -1 };
                 break;
+
             case 'city_asc':
                 sortOption = { city: 1 };
                 break;
             case 'city_desc':
                 sortOption = { city: -1 };
                 break;
+
             case 'status_asc':
                 sortOption = { status: 1 };
                 break;
             case 'status_desc':
                 sortOption = { status: -1 };
                 break;
+
             case 'category_asc':
                 sortOption = { category: 1 };
                 break;
             case 'category_desc':
                 sortOption = { category: -1 };
                 break;
+
+            case 'inspectionDate_asc':
+                sortOption = { inspectionDate: 1, category: 1 };
+                break;
+            case 'inspectionDate_desc':
+                sortOption = { inspectionDate: -1, category: 1 };
+                break;
+
             case 'createdAt_asc':
                 sortOption = { createdAt: 1 };
                 break;
             case 'createdAt_desc':
+                sortOption = { createdAt: -1 };
+                break;
+
             default:
                 sortOption = { category: 1 };
                 break;

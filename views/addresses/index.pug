@@ -68,6 +68,21 @@ block content
               option(value="mine" selected=filters.assigned === 'mine') Tylko moje
 
           .form-group
+            label(for="inspectionFrom") Wizja od
+            input#inspectionFrom(
+              type="date"
+              name="inspectionFrom"
+              value=filters.inspectionFrom
+            )
+
+          .form-group
+            label(for="inspectionTo") Wizja do
+            input#inspectionTo(
+              type="date"
+              name="inspectionTo"
+              value=filters.inspectionTo
+            )
+          .form-group
             label(for="sort") Sortowanie
             select#sort(name="sort")
               option(value="inspectionDate_asc" selected=filters.sort === 'inspectionDate_asc') Data wizji rosnąco

@@ -249,7 +249,9 @@ router.get('/', isLoggedIn, async (req, res) => {
             status = '',
             assigned = '',
             risk = '',
-            sort = 'category_asc'
+            sort = 'category_asc',
+            inspectionFrom = '',
+            inspectionTo = ''
         } = req.query;
 
         const filter = {};
@@ -283,7 +285,20 @@ router.get('/', isLoggedIn, async (req, res) => {
         } else if (assigned === 'assigned') {
             filter.assignedTo = { $ne: null };
         }
+        if (inspectionFrom || inspectionTo) {
+            filter.inspectionDate = {};
 
+            if (inspectionFrom) {
+                filter.inspectionDate.$gte = new Date(inspectionFrom);
+            }
+
+            if (inspectionTo) {
+                const endDate = new Date(inspectionTo);
+                endDate.setHours(23, 59, 59, 999);
+
+                filter.inspectionDate.$lte = endDate;
+            }
+        }
         let sortOption = { category: 1 };
 
         switch (sort) {
@@ -354,7 +369,9 @@ router.get('/', isLoggedIn, async (req, res) => {
                 status,
                 assigned,
                 risk,
-                sort
+                sort,
+                inspectionFrom,
+                inspectionTo
             }
         });
     } catch (error) {

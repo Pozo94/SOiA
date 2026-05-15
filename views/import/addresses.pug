@@ -1,0 +1,32 @@
+extends ../layout
+
+block content
+    .card
+        h2 Import adresów z Excela
+
+        p Plik powinien zawierać kolumny:
+
+        pre shortName | title | address | soundEmissionPattern | azimuth | power | latitude | longitude | volume | category | sirenType | city
+
+        if errors && errors.length
+            .flash.flash-error
+                each error in errors
+                    p= error
+
+        if summary
+            .flash.flash-success
+                if summary.imported !== undefined
+                    p Zaimportowano: #{summary.imported}
+                if summary.prepared !== undefined
+                    p Przygotowano do importu: #{summary.prepared}
+                p Pominięto duplikaty: #{summary.skippedDuplicates || 0}
+                p Pominięto puste wiersze: #{summary.skippedEmpty || 0}
+
+        form(action="/import/addresses/import" method="POST" enctype="multipart/form-data")
+            .form-group
+                label(for="excelFile") Plik Excel .xlsx
+                input#excelFile(type="file" name="excelFile" accept=".xlsx" required)
+
+            .actions
+                button(type="submit") Importuj adresy
+                a.button.button-secondary(href="/addresses") Powrót do listy

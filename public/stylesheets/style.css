@@ -251,7 +251,43 @@ button:hover,
   font-size: 14px;
   min-height: 42px;
 }
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 13px;
+  border-radius: 10px;
+  color: #e5e7eb;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
 
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.nav-link-admin {
+  background: rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+}
+
+.nav-link-admin:hover {
+  background: rgba(37, 99, 235, 0.45);
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+}
 textarea {
   min-height: 110px;
   resize: vertical;

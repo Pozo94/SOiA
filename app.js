@@ -12,6 +12,7 @@ const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/auth');
 const addressRoutes = require('./routes/addresses');
+const importRoutes = require('./routes/import');
 
 const app = express();
 
@@ -67,5 +68,5 @@ app.get('/', (req, res) => {
 
 app.use('/', authRoutes);
 app.use('/addresses', addressRoutes);
-
+app.use('/import', importRoutes);
 module.exports = app;

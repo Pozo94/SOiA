@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const { uploadPhotosToSFTP,uploadSignedToSFTP,downloadSignedFromSFTP,uploadSupplementDocxToSFTP,downloadSupplementDocxFromSFTP } = require('../services/sftpService');
 const Address = require('../models/Address');
 const User = require('../models/User');
+const XLSX = require('xlsx');
 const { isLoggedIn, canEditAssignedAddress,isAdmin } = require('../middleware/auth');
 const {
     ROOF_COVERING,
@@ -1082,6 +1083,317 @@ router.post('/:id/inspection-date', isLoggedIn, isAdmin, async (req, res) => {
     } catch (error) {
         console.error(error);
         req.flash('error', 'Nie udało się zapisać terminu wizji.');
+        return res.redirect('/addresses');
+    }
+});
+
+router.get('/export/xlsx', isLoggedIn, async (req, res) => {
+    try {
+        const {
+            q = '',
+            status = '',
+            assigned = '',
+            risk = '',
+            inspectionFrom = '',
+            inspectionTo = '',
+            sort = 'category_asc'
+        } = req.query;
+
+        const filter = {};
+
+        if (q.trim()) {
+            filter.$or = [
+                { shortName: { $regex: q.trim(), $options: 'i' } },
+                { title: { $regex: q.trim(), $options: 'i' } },
+                { address: { $regex: q.trim(), $options: 'i' } },
+                { city: { $regex: q.trim(), $options: 'i' } },
+                { category: { $regex: q.trim(), $options: 'i' } }
+            ];
+        }
+
+        if (status) {
+            filter.status = status;
+        }
+
+        if (risk === 'yes') {
+            filter.isAtRisk = true;
+        } else if (risk === 'no') {
+            filter.isAtRisk = false;
+        }
+
+        if (assigned === 'mine') {
+            filter.assignedTo = req.session.user.id;
+        } else if (assigned === 'free') {
+            filter.assignedTo = null;
+        } else if (assigned === 'assigned') {
+            filter.assignedTo = { $ne: null };
+        }
+
+        if (inspectionFrom || inspectionTo) {
+            filter.inspectionDate = {};
+
+            if (inspectionFrom) {
+                filter.inspectionDate.$gte = new Date(inspectionFrom);
+            }
+
+            if (inspectionTo) {
+                const endDate = new Date(inspectionTo);
+                endDate.setHours(23, 59, 59, 999);
+                filter.inspectionDate.$lte = endDate;
+            }
+        }
+
+        let sortOption = { category: 1 };
+
+        switch (sort) {
+            case 'shortName_asc':
+                sortOption = { shortName: 1 };
+                break;
+            case 'shortName_desc':
+                sortOption = { shortName: -1 };
+                break;
+
+            case 'title_asc':
+                sortOption = { title: 1 };
+                break;
+            case 'title_desc':
+                sortOption = { title: -1 };
+                break;
+
+            case 'city_asc':
+                sortOption = { city: 1 };
+                break;
+            case 'city_desc':
+                sortOption = { city: -1 };
+                break;
+
+            case 'status_asc':
+                sortOption = { status: 1 };
+                break;
+            case 'status_desc':
+                sortOption = { status: -1 };
+                break;
+
+            case 'category_asc':
+                sortOption = { category: 1 };
+                break;
+            case 'category_desc':
+                sortOption = { category: -1 };
+                break;
+
+            case 'inspectionDate_asc':
+                sortOption = { inspectionDate: 1, category: 1 };
+                break;
+            case 'inspectionDate_desc':
+                sortOption = { inspectionDate: -1, category: 1 };
+                break;
+
+            case 'createdAt_asc':
+                sortOption = { createdAt: 1 };
+                break;
+            case 'createdAt_desc':
+                sortOption = { createdAt: -1 };
+                break;
+
+            default:
+                sortOption = { category: 1 };
+                break;
+        }
+
+        const addresses = await Address.find(filter)
+            .populate('assignedTo')
+            .sort(sortOption)
+            .lean();
+
+        const rows = addresses.map(address => {
+            const supplement = address.supplement || {};
+            const contact = supplement.contact || {};
+
+            return {
+                shortName: address.shortName || '',
+                title: address.title || '',
+                category: address.category || '',
+                address: address.address || '',
+                city: address.city || '',
+                latitude: address.latitude || '',
+                longitude: address.longitude || '',
+                sirenPower: address.sirenPower || '',
+                sirenType: address.sirenType || '',
+                soundEmissionPattern: address.soundEmissionPattern || '',
+                azimuth: address.azimuth ?? '',
+                volume: address.volume ?? '',
+
+                status: address.status || '',
+                assignedTo: address.assignedTo ? address.assignedTo.username : '',
+                inspectionDate: address.inspectionDate
+                    ? new Date(address.inspectionDate).toLocaleString('pl-PL')
+                    : '',
+                isAtRisk: address.isAtRisk ? 'TAK' : 'NIE',
+                riskReason: address.riskReason || '',
+                notes: address.notes || '',
+
+                objectNumber: supplement.objectNumber || '',
+                visionDate: supplement.visionDate
+                    ? new Date(supplement.visionDate).toLocaleDateString('pl-PL')
+                    : '',
+                lift: supplement.lift ? 'TAK' : 'NIE',
+
+                sirenLocation: supplement.sirenLocation || '',
+                speakerLocation: supplement.speakerLocation || '',
+                speakerHeight: supplement.speakerHeight ?? '',
+                antennaGSM: supplement.antennaGSM || '',
+                antennaCable: supplement.antennaCable ?? '',
+                sirenMounting: supplement.sirenMounting || '',
+
+                powerLocation: supplement.powerLocation || '',
+                powerBool: supplement.powerBool ? 'TAK' : 'NIE',
+                fuseBoxLocation: supplement.fuseBoxLocation || '',
+                powerLocationDistance: supplement.powerLocationDistance ?? '',
+                sirenDistance: supplement.sirenDistance ?? '',
+                sirenWalls: supplement.sirenWalls ?? '',
+
+                lightningProtection: supplement.lightningProtection ? 'TAK' : 'NIE',
+                lightningProtectionDistance: supplement.lightningProtectionDistance ?? '',
+                buildingHeight: supplement.buildingHeight ?? '',
+                lightningProtectionLength: supplement.lightningProtectionLength ?? '',
+                groundType: supplement.groundType || '',
+
+                passageMethod: supplement.passageMethod === 'inne'
+                    ? supplement.passageMethodCustom || ''
+                    : supplement.passageMethod || '',
+
+                roofCovering: supplement.roofCovering || '',
+
+                lan: supplement.lan ? 'TAK' : 'NIE',
+                lanLength: supplement.lanLength ?? '',
+                lanWalls: supplement.lanWalls ?? '',
+                lanRoute: supplement.lanRoute || '',
+
+                comments: supplement.comments || '',
+
+                contactFirstname: contact.firstname || '',
+                contactLastname: contact.lastname || '',
+                contactPhone: contact.phone || '',
+
+                supplementDocxName: supplement.supplementDocxName || '',
+                supplementDocxPath: supplement.supplementDocxPath || '',
+
+                createdAt: address.createdAt
+                    ? new Date(address.createdAt).toLocaleString('pl-PL')
+                    : '',
+                updatedAt: address.updatedAt
+                    ? new Date(address.updatedAt).toLocaleString('pl-PL')
+                    : ''
+            };
+        });
+
+        const headers = [
+            'shortName',
+            'title',
+            'category',
+            'address',
+            'city',
+            'latitude',
+            'longitude',
+            'sirenPower',
+            'sirenType',
+            'soundEmissionPattern',
+            'azimuth',
+            'volume',
+
+            'status',
+            'assignedTo',
+            'inspectionDate',
+            'isAtRisk',
+            'riskReason',
+            'notes',
+
+            'objectNumber',
+            'visionDate',
+            'lift',
+            'sirenLocation',
+            'speakerLocation',
+            'speakerHeight',
+            'antennaGSM',
+            'antennaCable',
+            'sirenMounting',
+            'powerLocation',
+            'powerBool',
+            'fuseBoxLocation',
+            'powerLocationDistance',
+            'sirenDistance',
+            'sirenWalls',
+            'lightningProtection',
+            'lightningProtectionDistance',
+            'buildingHeight',
+            'lightningProtectionLength',
+            'groundType',
+            'passageMethod',
+            'roofCovering',
+            'lan',
+            'lanLength',
+            'lanWalls',
+            'lanRoute',
+            'comments',
+            'contactFirstname',
+            'contactLastname',
+            'contactPhone',
+            'supplementDocxName',
+            'supplementDocxPath',
+            'createdAt',
+            'updatedAt'
+        ];
+        console.log('EXPORT FIRST ROW:', rows[0]);
+        console.log('EXPORT ROW WITH SUPPLEMENT:', rows.find(row => row.objectNumber));
+        const worksheet = XLSX.utils.json_to_sheet(rows, {
+            header: headers,
+            skipHeader: false
+        });
+
+        worksheet['!cols'] = [
+            { wch: 18 }, // shortName
+            { wch: 30 }, // title
+            { wch: 20 }, // category
+            { wch: 35 }, // address
+            { wch: 18 }, // city
+            { wch: 14 }, // latitude
+            { wch: 14 }, // longitude
+            { wch: 14 }, // sirenPower
+            { wch: 14 }, // sirenType
+            { wch: 22 }, // soundEmissionPattern
+            { wch: 10 }, // azimuth
+            { wch: 10 }, // volume
+            { wch: 14 }, // status
+            { wch: 18 }, // assignedTo
+            { wch: 22 }, // inspectionDate
+            { wch: 12 }, // isAtRisk
+            { wch: 35 }, // riskReason
+            { wch: 35 }, // notes
+        ];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Adresy');
+
+        const buffer = XLSX.write(workbook, {
+            type: 'buffer',
+            bookType: 'xlsx'
+        });
+
+        const fileName = `adresy_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${fileName}"`
+        );
+
+        return res.send(buffer);
+    } catch (error) {
+        console.error(error);
+        req.flash('error', 'Nie udało się wyeksportować adresów.');
         return res.redirect('/addresses');
     }
 });

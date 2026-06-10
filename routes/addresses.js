@@ -1211,31 +1211,14 @@ router.get('/export/xlsx', isLoggedIn, async (req, res) => {
 
             return {
                 shortName: address.shortName || '',
-                title: address.title || '',
                 category: address.category || '',
                 address: address.address || '',
-                city: address.city || '',
-                latitude: address.latitude || '',
-                longitude: address.longitude || '',
                 sirenPower: address.sirenPower || '',
-                sirenType: address.sirenType || '',
                 soundEmissionPattern: address.soundEmissionPattern || '',
                 azimuth: address.azimuth ?? '',
-                volume: address.volume ?? '',
-
                 status: address.status || '',
-                assignedTo: address.assignedTo ? address.assignedTo.username : '',
-                inspectionDate: address.inspectionDate
-                    ? new Date(address.inspectionDate).toLocaleString('pl-PL')
-                    : '',
                 isAtRisk: address.isAtRisk ? 'TAK' : 'NIE',
                 riskReason: address.riskReason || '',
-                notes: address.notes || '',
-
-                objectNumber: supplement.objectNumber || '',
-                visionDate: supplement.visionDate
-                    ? new Date(supplement.visionDate).toLocaleDateString('pl-PL')
-                    : '',
                 lift: supplement.lift ? 'TAK' : 'NIE',
 
                 sirenLocation: supplement.sirenLocation || '',
@@ -1271,45 +1254,20 @@ router.get('/export/xlsx', isLoggedIn, async (req, res) => {
 
                 comments: supplement.comments || '',
 
-                contactFirstname: contact.firstname || '',
-                contactLastname: contact.lastname || '',
-                contactPhone: contact.phone || '',
 
-                supplementDocxName: supplement.supplementDocxName || '',
-                supplementDocxPath: supplement.supplementDocxPath || '',
-
-                createdAt: address.createdAt
-                    ? new Date(address.createdAt).toLocaleString('pl-PL')
-                    : '',
-                updatedAt: address.updatedAt
-                    ? new Date(address.updatedAt).toLocaleString('pl-PL')
-                    : ''
             };
         });
 
         const headers = [
             'shortName',
-            'title',
             'category',
             'address',
-            'city',
-            'latitude',
-            'longitude',
             'sirenPower',
-            'sirenType',
             'soundEmissionPattern',
             'azimuth',
-            'volume',
 
             'status',
-            'assignedTo',
-            'inspectionDate',
             'isAtRisk',
-            'riskReason',
-            'notes',
-
-            'objectNumber',
-            'visionDate',
             'lift',
             'sirenLocation',
             'speakerLocation',
@@ -1334,17 +1292,10 @@ router.get('/export/xlsx', isLoggedIn, async (req, res) => {
             'lanLength',
             'lanWalls',
             'lanRoute',
-            'comments',
-            'contactFirstname',
-            'contactLastname',
-            'contactPhone',
-            'supplementDocxName',
-            'supplementDocxPath',
-            'createdAt',
-            'updatedAt'
+            'comments'
+
         ];
-        console.log('EXPORT FIRST ROW:', rows[0]);
-        console.log('EXPORT ROW WITH SUPPLEMENT:', rows.find(row => row.objectNumber));
+
         const worksheet = XLSX.utils.json_to_sheet(rows, {
             header: headers,
             skipHeader: false
@@ -1352,23 +1303,13 @@ router.get('/export/xlsx', isLoggedIn, async (req, res) => {
 
         worksheet['!cols'] = [
             { wch: 18 }, // shortName
-            { wch: 30 }, // title
             { wch: 20 }, // category
             { wch: 35 }, // address
-            { wch: 18 }, // city
-            { wch: 14 }, // latitude
-            { wch: 14 }, // longitude
             { wch: 14 }, // sirenPower
-            { wch: 14 }, // sirenType
             { wch: 22 }, // soundEmissionPattern
             { wch: 10 }, // azimuth
-            { wch: 10 }, // volume
             { wch: 14 }, // status
-            { wch: 18 }, // assignedTo
-            { wch: 22 }, // inspectionDate
             { wch: 12 }, // isAtRisk
-            { wch: 35 }, // riskReason
-            { wch: 35 }, // notes
         ];
 
         const workbook = XLSX.utils.book_new();

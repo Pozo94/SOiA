@@ -18,9 +18,10 @@ html(lang="pl")
 
             if currentUser.role === 'admin'
               a.nav-link.nav-link-admin(href="/import/addresses/import") Import adresów
-              a.nav-link.nav-link-admin(
-                href=`/addresses/export/xlsx?q=${filters.q}&status=${filters.status}&assigned=${filters.assigned}&risk=${filters.risk}&inspectionFrom=${filters.inspectionFrom || ''}&inspectionTo=${filters.inspectionTo || ''}&sort=${filters.sort}`
-              ) Eksport XLSX
+              if currentPath === '/addresses'
+                a.nav-link.nav-link-admin(
+                  href=`/addresses/export/xlsx?q=${filters.q}&status=${filters.status}&assigned=${filters.assigned}&risk=${filters.risk}&inspectionFrom=${filters.inspectionFrom || ''}&inspectionTo=${filters.inspectionTo || ''}&sort=${filters.sort}`
+                ) Eksport XLSX
             span.user-badge= currentUser.username
 
             form.inline-form(action="/logout" method="POST")

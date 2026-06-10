@@ -65,7 +65,10 @@ app.get('/', (req, res) => {
 
   return res.redirect('/login');
 });
-
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    next();
+});
 app.use('/', authRoutes);
 app.use('/addresses', addressRoutes);
 app.use('/import', importRoutes);
